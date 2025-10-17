@@ -13,17 +13,17 @@ after each push to `main`
 
 ## Waitlist form
 
-The waitlist form posts to whatever URL you place in the `data-endpoint` attribute on the
-`<form id="waitlist-form">` element. The template ships with a placeholder value
-(`https://formspree.io/f/{your-form-id}`) so submissions are blocked until you connect your own
-service (Formspree, Getform, Google Apps Script, Zapier, etc.). Steps:
+By default the waitlist submits to [FormSubmit](https://formsubmit.co/) at
+`https://formsubmit.co/ajax/contact@nmbli.com`. FormSubmit relays each entry to `contact@nmbli.com`
+and also stores the response (you approve the address on the first submission they send you). The
+inline script expects a JSON response and shows success/error messaging in-page.
 
-1. Create a form endpoint with your provider of choice and copy the POST URL.
-2. Update the `data-endpoint` attribute in `index.html` to the new URL.
-3. If the provider requires additional hidden fields or headers, add them to the form and adjust the
-   fetch call in the inline script.
-4. Test in production—successful submissions return a green confirmation banner; failures surface in
-   the inline status message and the console.
+If you want to switch providers:
+
+1. Replace the `data-endpoint` attribute on `<form id="waitlist-form">` with the new POST URL.
+2. Update or add any hidden form fields the provider requires (for example API keys, tags, etc.).
+3. Adjust the `fetch` call in the inline script if the provider expects JSON instead of `FormData`.
+4. Test a production submission; on success you should see the green confirmation banner.
 
 ## Deploying to GitHub Pages
 

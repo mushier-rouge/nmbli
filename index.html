@@ -367,14 +367,21 @@
           Tell us where you are and how soon you need the car. We’ll reach out when a slot opens in
           your metro or connect you with a partner dealer.
         </p>
-        <form id="waitlist-form" data-endpoint="https://formspree.io/f/{your-form-id}" novalidate>
+        <form
+          id="waitlist-form"
+          data-endpoint="https://formsubmit.co/ajax/contact@nmbli.com"
+          novalidate
+        >
+          <input type="hidden" name="_subject" value="Nmbli pilot waitlist" />
+          <input type="hidden" name="_template" value="table" />
+          <input type="hidden" name="_captcha" value="false" />
           <label>
             Email
             <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" />
           </label>
           <label>
             Metro or ZIP (optional)
-            <input type="text" name="location" placeholder="e.g. 11211" autocomplete="postal-code" />
+            <input type="text" name="location" placeholder="e.g. 94105" autocomplete="postal-code" />
           </label>
           <label>
             What are you shopping for?
@@ -390,7 +397,6 @@
 
       <footer>
         <span>© <span id="year"></span> Nmbli. All rights reserved.</span>
-        <span>Based in San Francisco · Working with buyers nationwide.</span>
         <a href="mailto:contact@nmbli.com">contact@nmbli.com</a>
       </footer>
     </div>
