@@ -1,6 +1,6 @@
 # nmbli.com
 
-Minimal static landing page for nmbli along with assets to publish an MTA-STS policy on `mta-sts.nmbli.com`.
+Static landing page for the Nmbli pilot plus assets to publish an MTA-STS policy on `mta-sts.nmbli.com`.
 
 ## Project layout
 
@@ -10,6 +10,20 @@ Minimal static landing page for nmbli along with assets to publish an MTA-STS po
 after each push to `main`
 - `mta-sts/.well-known/mta-sts.txt`: Policy file for the dedicated MTA-STS host
 - `mta-sts/CNAME`: Convenience file to reuse when publishing the policy folder as its own GitHub Pages site
+
+## Waitlist form
+
+The waitlist form posts to whatever URL you place in the `data-endpoint` attribute on the
+`<form id="waitlist-form">` element. The template ships with a placeholder value
+(`https://formspree.io/f/{your-form-id}`) so submissions are blocked until you connect your own
+service (Formspree, Getform, Google Apps Script, Zapier, etc.). Steps:
+
+1. Create a form endpoint with your provider of choice and copy the POST URL.
+2. Update the `data-endpoint` attribute in `index.html` to the new URL.
+3. If the provider requires additional hidden fields or headers, add them to the form and adjust the
+   fetch call in the inline script.
+4. Test in production—successful submissions return a green confirmation banner; failures surface in
+   the inline status message and the console.
 
 ## Deploying to GitHub Pages
 

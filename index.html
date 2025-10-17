@@ -3,30 +3,44 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>nmbli — Thoughtful Digital Products</title>
-    <meta name="description" content="nmbli builds thoughtful digital products and technical partnerships." />
+    <title>Nmbli — Out-the-door car deals without the haggle</title>
+    <meta
+      name="description"
+      content="Nmbli turns your car brief into verified out-the-door quotes, keeps negotiations clean, and blocks contract surprises before you e-sign. Join the pilot waitlist."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #f8fafc;
-        --fg: #111827;
-        --muted: #4b5563;
-        --accent: #2563eb;
-        --surface: rgba(255, 255, 255, 0.8);
+        --bg: #0f172a;
+        --card: rgba(15, 23, 42, 0.75);
+        --card-border: rgba(148, 163, 184, 0.18);
+        --fg: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-strong: #0ea5e9;
+        --accent-soft: rgba(14, 165, 233, 0.12);
+        --success: #4ade80;
+        --error: #f87171;
       }
 
-      @media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: light) {
         :root {
-          --bg: #0f172a;
-          --fg: #f8fafc;
-          --muted: #94a3b8;
-          --surface: rgba(15, 23, 42, 0.8);
+          --bg: #f8fafc;
+          --card: rgba(255, 255, 255, 0.92);
+          --card-border: rgba(15, 23, 42, 0.06);
+          --fg: #0f172a;
+          --muted: #475569;
+          --accent: #2563eb;
+          --accent-strong: #1d4ed8;
+          --accent-soft: rgba(37, 99, 235, 0.12);
+          --success: #16a34a;
+          --error: #dc2626;
         }
       }
 
@@ -36,139 +50,399 @@
 
       body {
         margin: 0;
-        min-height: 100vh;
         font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: radial-gradient(circle at top, var(--surface), var(--bg) 55%), var(--bg);
+        background:
+          radial-gradient(80% 60% at 20% 0%, rgba(56, 189, 248, 0.25), transparent 55%),
+          radial-gradient(70% 60% at 80% 0%, rgba(14, 165, 233, 0.15), transparent 55%),
+          var(--bg);
         color: var(--fg);
+        min-height: 100vh;
+      }
+
+      .page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem) 5rem;
+        display: grid;
+        gap: clamp(2.5rem, 5vw, 3.5rem);
+      }
+
+      header {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 2.5rem 1.5rem;
+        justify-content: space-between;
+        gap: 1rem;
       }
 
-      main {
-        max-width: 720px;
-        background: rgba(255, 255, 255, 0.9);
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+      }
+
+      .hero {
+        display: grid;
+        gap: clamp(1.75rem, 4vw, 2.5rem);
+        padding: clamp(2rem, 4vw, 3rem);
+        border-radius: 24px;
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 35px 80px rgba(15, 23, 42, 0.28);
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(2.75rem, 6vw, 3.9rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+
+      .hero p {
+        margin: 0;
+        font-size: clamp(1.1rem, 2.5vw, 1.25rem);
+        line-height: 1.75;
+        color: var(--muted);
+        max-width: 640px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .pilot-card {
+        margin-top: 0.5rem;
+        padding: 1.5rem;
         border-radius: 18px;
-        padding: 3rem;
-        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-        backdrop-filter: blur(12px);
+        border: 1px solid rgba(56, 189, 248, 0.32);
+        background: rgba(8, 47, 73, 0.4);
+        color: rgba(224, 242, 254, 0.92);
+        display: inline-flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        max-width: 440px;
       }
 
-      @media (prefers-color-scheme: dark) {
-        main {
-          background: rgba(15, 23, 42, 0.85);
-          box-shadow: 0 25px 75px rgba(15, 23, 42, 0.35);
+      @media (prefers-color-scheme: light) {
+        .pilot-card {
+          background: rgba(191, 219, 254, 0.25);
+          border-color: rgba(37, 99, 235, 0.3);
+          color: #1e3a8a;
         }
       }
 
-      h1 {
-        margin: 0 0 1rem;
-        font-size: clamp(2.5rem, 5vw, 3.5rem);
-        letter-spacing: -0.02em;
+      .pilot-card strong {
+        font-size: 0.9rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
       }
 
-      p {
-        line-height: 1.7;
-        font-size: 1.1rem;
-        margin: 0 0 1.5rem;
+      .grid {
+        display: grid;
+        gap: clamp(1.5rem, 3vw, 2rem);
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: clamp(1.5rem, 3vw, 2rem);
+        display: grid;
+        gap: 0.9rem;
+        backdrop-filter: blur(12px);
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .card p {
+        margin: 0;
         color: var(--muted);
+        line-height: 1.6;
       }
 
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
+      .card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      form {
+        display: grid;
         gap: 1rem;
-        align-items: center;
       }
 
-      .cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.85rem 1.4rem;
+      label {
+        display: grid;
+        gap: 0.45rem;
+        font-weight: 500;
+      }
+
+      input,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(15, 23, 42, 0.35);
+        color: inherit;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+      }
+
+      @media (prefers-color-scheme: light) {
+        input,
+        textarea {
+          background: rgba(255, 255, 255, 0.9);
+        }
+      }
+
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      button {
+        justify-self: flex-start;
+        padding: 0.9rem 1.75rem;
         border-radius: 999px;
-        font-weight: 600;
+        border: none;
+        background: linear-gradient(120deg, var(--accent-strong), #9333ea);
         color: #fff;
-        background: linear-gradient(120deg, #2563eb, #7c3aed);
-        text-decoration: none;
-        box-shadow: 0 12px 35px rgba(37, 99, 235, 0.25);
+        font-weight: 600;
+        cursor: pointer;
         transition: transform 150ms ease, box-shadow 150ms ease;
       }
 
-      .cta:hover,
-      .cta:focus {
+      button:hover,
+      button:focus {
         transform: translateY(-1px);
-        box-shadow: 0 18px 45px rgba(124, 58, 237, 0.3);
+        box-shadow: 0 18px 40px rgba(79, 70, 229, 0.35);
+        outline: none;
       }
 
-      .secondary {
-        font-weight: 600;
-        color: var(--muted);
-        text-decoration: none;
+      .form-footnote {
+        font-size: 0.85rem;
+        color: rgba(148, 163, 184, 0.9);
+        line-height: 1.6;
+      }
+
+      .status {
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      .status.success {
+        color: var(--success);
+      }
+
+      .status.error {
+        color: var(--error);
       }
 
       footer {
-        margin-top: 2.5rem;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: space-between;
       }
 
       footer a {
         color: inherit;
+        text-decoration: none;
       }
 
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.55rem 1.1rem;
-        border-radius: 999px;
-        background: rgba(37, 99, 235, 0.1);
-        color: var(--accent);
-        font-weight: 600;
-        font-size: 0.85rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      @media (max-width: 600px) {
-        main {
-          padding: 2.25rem 1.75rem;
-        }
-
-        .actions {
+      @media (max-width: 720px) {
+        header {
           flex-direction: column;
-          align-items: stretch;
+          align-items: flex-start;
         }
 
-        .cta {
-          justify-content: center;
-          width: 100%;
-        }
-
-        .secondary {
-          text-align: center;
+        footer {
+          flex-direction: column;
+          align-items: flex-start;
         }
       }
     </style>
   </head>
   <body>
-    <main>
-      <span class="pill">nmbli</span>
-      <h1>Thoughtful digital products for the long haul.</h1>
-      <p>
-        nmbli partners with founders and teams to design, build, and grow resilient
-        software. From early prototypes to mature platforms, we bring a craft-driven
-        approach to shipping experiences people trust.
-      </p>
-      <div class="actions">
-        <a class="cta" href="mailto:hello@nmbli.com">Start a conversation</a>
-        <a class="secondary" href="mailto:hello@nmbli.com">hello@nmbli.com</a>
-      </div>
+    <div class="page">
+      <header>
+        <span class="brand">Nmbli</span>
+        <div class="chip">Pilot recruiting now</div>
+      </header>
+
+      <section class="hero">
+        <div class="grid">
+          <h1>The car buying assistant that enforces your out-the-door price.</h1>
+          <p>
+            Send us your brief and we normalize dealer quotes, automate counters, and lock the
+            contract to the number you approved. No showroom pressure, no last-minute fees—just the
+            keys.
+          </p>
+          <div class="chips">
+            <span class="chip">Verified OTD quotes</span>
+            <span class="chip">Contract ≠? Quote — we stop it</span>
+            <span class="chip">Negotiation without the phone tag</span>
+          </div>
+        </div>
+        <div class="pilot-card">
+          <strong>Metro pilot · 48h turnaround</strong>
+          <span>We’re onboarding buyers and dealers in select launch metros. Slots are limited.</span>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <h2>Why dealers lean in</h2>
+          <p>
+            Every brief arrives qualified with buyer intent, budget, and timeline. You respond once
+            with a structured quote—no endless back-and-forth.
+          </p>
+          <ul>
+            <li>Normalized worksheets: taxes, fees, add-ons, rebates</li>
+            <li>One-click counters when the buyer trims extras</li>
+            <li>DocuSign handoff only after the buyer gives the green light</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>Guardrails for buyers</h2>
+          <p>
+            We parse every document before e-sign. If the contract drifts from the accepted quote, we
+            flag it and block the signing flow until it’s clean.
+          </p>
+          <ul>
+            <li>Clear timeline of every quote, counter, and approval</li>
+            <li>Automated add-on removal with transparent diffs</li>
+            <li>No-surprise pledge backed by human review</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="card" id="waitlist">
+        <h2>Join the pilot waitlist</h2>
+        <p>
+          Tell us where you are and how soon you need the car. We’ll reach out when a slot opens in
+          your metro or connect you with a partner dealer.
+        </p>
+        <form id="waitlist-form" data-endpoint="https://formspree.io/f/{your-form-id}" novalidate>
+          <label>
+            Email
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+          </label>
+          <label>
+            Metro or ZIP (optional)
+            <input type="text" name="location" placeholder="e.g. 11211" autocomplete="postal-code" />
+          </label>
+          <label>
+            What are you shopping for?
+            <textarea name="brief" placeholder="2025 RAV4 XSE, leasing, want delivery before December" required></textarea>
+          </label>
+          <button type="submit">Reserve a spot</button>
+          <p class="form-footnote">
+            We’ll email to confirm your request and share next steps. No spam, ever.
+          </p>
+          <p class="status" id="form-status" aria-live="polite"></p>
+        </form>
+      </section>
+
       <footer>
-        <div>Based in New York · Working with teams everywhere.</div>
+        <span>© <span id="year"></span> Nmbli. All rights reserved.</span>
+        <a href="mailto:hello@nmbli.com">hello@nmbli.com</a>
       </footer>
-    </main>
+    </div>
+
+    <script>
+      const year = document.getElementById('year');
+      if (year) {
+        year.textContent = new Date().getFullYear();
+      }
+
+      const form = document.getElementById('waitlist-form');
+      const status = document.getElementById('form-status');
+
+      if (form && status) {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const endpoint = form.dataset.endpoint;
+          if (!endpoint || endpoint.includes('{your-form-id}')) {
+            status.textContent =
+              'Form endpoint is not configured yet. Update data-endpoint with your waitlist service URL.';
+            status.className = 'status error';
+            return;
+          }
+
+          status.textContent = 'Submitting…';
+          status.className = 'status';
+
+          try {
+            const formData = new FormData(form);
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                Accept: 'application/json',
+              },
+              body: formData,
+            });
+
+            if (response.ok) {
+              status.textContent = 'Thanks! Check your inbox for a confirmation email.';
+              status.className = 'status success';
+              form.reset();
+            } else {
+              throw new Error(`Request failed: ${response.status}`);
+            }
+          } catch (error) {
+            console.error(error);
+            status.textContent =
+              'Something went wrong. Email hello@nmbli.com and we will get you on the list.';
+            status.className = 'status error';
+          }
+        });
+      }
+    </script>
   </body>
 </html>
