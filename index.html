@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>nmbli — Thoughtful Digital Products</title>
+    <meta name="description" content="nmbli builds thoughtful digital products and technical partnerships." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f8fafc;
+        --fg: #111827;
+        --muted: #4b5563;
+        --accent: #2563eb;
+        --surface: rgba(255, 255, 255, 0.8);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f172a;
+          --fg: #f8fafc;
+          --muted: #94a3b8;
+          --surface: rgba(15, 23, 42, 0.8);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at top, var(--surface), var(--bg) 55%), var(--bg);
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5rem 1.5rem;
+      }
+
+      main {
+        max-width: 720px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(12px);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        main {
+          background: rgba(15, 23, 42, 0.85);
+          box-shadow: 0 25px 75px rgba(15, 23, 42, 0.35);
+        }
+      }
+
+      h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        line-height: 1.7;
+        font-size: 1.1rem;
+        margin: 0 0 1.5rem;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.85rem 1.4rem;
+        border-radius: 999px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(120deg, #2563eb, #7c3aed);
+        text-decoration: none;
+        box-shadow: 0 12px 35px rgba(37, 99, 235, 0.25);
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .cta:hover,
+      .cta:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 45px rgba(124, 58, 237, 0.3);
+      }
+
+      .secondary {
+        font-weight: 600;
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      footer a {
+        color: inherit;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: 2.25rem 1.75rem;
+        }
+
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .cta {
+          justify-content: center;
+          width: 100%;
+        }
+
+        .secondary {
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="pill">nmbli</span>
+      <h1>Thoughtful digital products for the long haul.</h1>
+      <p>
+        nmbli partners with founders and teams to design, build, and grow resilient
+        software. From early prototypes to mature platforms, we bring a craft-driven
+        approach to shipping experiences people trust.
+      </p>
+      <div class="actions">
+        <a class="cta" href="mailto:hello@nmbli.com">Start a conversation</a>
+        <a class="secondary" href="mailto:hello@nmbli.com">hello@nmbli.com</a>
+      </div>
+      <footer>
+        <div>Based in New York · Working with teams everywhere.</div>
+      </footer>
+    </main>
+  </body>
+</html>
