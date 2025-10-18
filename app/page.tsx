@@ -66,8 +66,9 @@ export default function HomePage() {
         <div className="grid">
           <h1>The car buying assistant that enforces your out-the-door price.</h1>
           <p>
-            Send us your brief and we normalize dealer quotes, automate counters, and lock the contract
-            to the number you approved. No showroom pressure, no last-minute fees—just the keys.
+            Send us your brief and we source, normalize, and compare the quotes for you. We handle the
+            back-and-forth and lock the contract to the number you approved. No showroom pressure, no
+            last-minute fees—just the keys.
           </p>
           <div className="chips">
             <span className="chip">Verified OTD quotes</span>
@@ -77,21 +78,22 @@ export default function HomePage() {
         </div>
         <div className="pilot-card">
           <strong>Metro pilot · 48h turnaround</strong>
-          <span>We’re onboarding buyers and dealers in select launch metros. Slots are limited.</span>
+          <span>We’re onboarding buyers in select launch metros. Slots are limited.</span>
         </div>
       </section>
 
       <section className="grid two">
         <article className="card">
-          <h2>Why dealers lean in</h2>
+          <h2>Why our partners cooperate</h2>
           <p>
-            Every brief arrives qualified with buyer intent, budget, and timeline. You respond once with a
-            structured quote—no endless back-and-forth.
+            Every brief arrives qualified with buyer intent, budget, and timeline. We translate it into a
+            structured quote request, collect the paperwork, and keep everyone aligned without endless
+            phone tag.
           </p>
           <ul>
             <li>Normalized worksheets: taxes, fees, add-ons, rebates</li>
-            <li>One-click counters when the buyer trims extras</li>
-            <li>DocuSign handoff only after the buyer gives the green light</li>
+            <li>Fast counters when the buyer trims extras</li>
+            <li>Contract handoff only after the buyer gives the green light</li>
           </ul>
         </article>
         <article className="card">
@@ -112,7 +114,7 @@ export default function HomePage() {
         <h2>Join the pilot waitlist</h2>
         <p>
           Tell us where you are and how soon you need the car. We’ll reach out when a slot opens in your
-          metro or connect you with a partner dealer.
+          metro or when one of our trusted partners can make the numbers work.
         </p>
         <form onSubmit={handleSubmit} noValidate>
           <label>
