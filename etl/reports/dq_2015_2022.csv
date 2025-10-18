@@ -1,0 +1,65 @@
+detail,make,model,type,year
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2015
+,Acura,NSX,model_missing_crosscheck,2015
+,Audi,A3 e-tron,model_missing_crosscheck,2015
+,Audi,allroad,model_missing_crosscheck,2015
+,Bentley,Continental GT,model_missing_crosscheck,2015
+,BMW,2 Series,model_missing_crosscheck,2015
+,BMW,3 Series,model_missing_crosscheck,2015
+,BMW,3 Series Gran Turismo,model_missing_crosscheck,2015
+,BMW,4 Series,model_missing_crosscheck,2015
+,BMW,4 Series Gran Coupe,model_missing_crosscheck,2015
+,BMW,5 Series,model_missing_crosscheck,2015
+,BMW,5 Series Gran Turismo,model_missing_crosscheck,2015
+,BMW,6 Series,model_missing_crosscheck,2015
+,BMW,6 Series Gran Coupe,model_missing_crosscheck,2015
+,BMW,7 Series,model_missing_crosscheck,2015
+,BMW,ALPINA B6 Gran Coupe,model_missing_crosscheck,2015
+,BMW,ALPINA B7,model_missing_crosscheck,2015
+,BMW,M6 Gran Coupe,model_missing_crosscheck,2015
+,Buick,,no_models_for_make,2015
+,Cadillac,,no_models_for_make,2015
+,Chevrolet,,no_models_for_make,2015
+,Chrysler,,no_models_for_make,2015
+,Dodge,,no_models_for_make,2015
+,Fiat,,no_models_for_make,2015
+,Ford,,no_models_for_make,2015
+,GMC,,no_models_for_make,2015
+,Honda,,no_models_for_make,2015
+,Hyundai,,no_models_for_make,2015
+,Infiniti,,no_models_for_make,2015
+,Jaguar,,no_models_for_make,2015
+,Jeep,,no_models_for_make,2015
+,Kia,,no_models_for_make,2015
+,Lamborghini,,no_models_for_make,2015
+,Lexus,,no_models_for_make,2015
+,Lincoln,,no_models_for_make,2015
+,Maserati,,no_models_for_make,2015
+,Mazda,,no_models_for_make,2015
+,McLaren,,no_models_for_make,2015
+,Mercedes-Benz,,no_models_for_make,2015
+,MINI,,no_models_for_make,2015
+,Mitsubishi,,no_models_for_make,2015
+,Nissan,,no_models_for_make,2015
+,Porsche,,no_models_for_make,2015
+,Rolls-Royce,,no_models_for_make,2015
+,Scion,,no_models_for_make,2015
+,Smart,,no_models_for_make,2015
+,Subaru,,no_models_for_make,2015
+,Toyota,,no_models_for_make,2015
+,Volkswagen,,no_models_for_make,2015
+,Volvo,,no_models_for_make,2015
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2016
+,,,no_carquery_makes,2016
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2017
+,,,no_carquery_makes,2017
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2018
+,,,no_carquery_makes,2018
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2019
+,,,no_carquery_makes,2019
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2020
+,,,no_carquery_makes,2020
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2021
+,,,no_carquery_makes,2021
+"not well-formed (invalid token): line 1, column 0",,,doe_fetch_failed,2022
+,,,no_carquery_makes,2022

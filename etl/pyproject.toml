@@ -1,0 +1,28 @@
+[project]
+name = "nmbli-etl"
+version = "0.1.0"
+description = "US Make-Model-Trim ETL"
+authors = [{name = "Nmbli"}]
+requires-python = ">=3.11"
+dependencies = [
+    "httpx[http2]~=0.27.0",
+    "tenacity~=9.0",
+    "pydantic~=2.8",
+    "sqlalchemy~=2.0",
+    "psycopg[binary]~=3.2",
+    "rich~=13.7",
+    "typer~=0.12",
+    "aiodns~=3.0",
+    "xmltodict~=0.13",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest~=8.3",
+    "pytest-asyncio~=0.23",
+    "respx~=0.21",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  buyer
+  dealer
+  ops
+}
+
+enum BriefStatus {
+  sourcing
+  offers
+  negotiation
+  contract
+  done
+}
+
+enum PaymentType {
+  cash
+  finance
+  lease
+}
+
+enum DealerInviteState {
+  sent
+  viewed
+  submitted
+  revised
+  expired
+}
+
+enum QuoteStatus {
+  draft
+  published
+  superseded
+  accepted
+  rejected
+}
+
+enum QuoteLineKind {
+  incentive
+  addon
+  fee
+}
+
+enum QuoteSource {
+  dealer_form
+  email_parsed
+}
+
+enum ContractStatus {
+  uploaded
+  checked_ok
+  mismatch
+}
+
+enum TimelineActor {
+  buyer
+  dealer
+  ops
+  system
+}
+
+enum TimelineEventType {
+  brief_created
+  dealer_invited
+  invite_viewed
+  quote_submitted
+  quote_revised
+  quote_published
+  quote_accepted
+  quote_rejected
+  counter_sent
+  counter_accepted
+  contract_uploaded
+  contract_checked
+  contract_mismatch
+  contract_pass
+  completed
+}
+
+enum FileOwnerType {
+  quote
+  contract
+  timeline
+}
+
+enum DealerProspectStatus {
+  pending
+  contacted
+  declined
+}
+
+model User {
+  id        String         @id @default(uuid())
+  email     String         @unique
+  role      UserRole
+  name      String
+  briefs    Brief[]
+  dealers   Dealer[]       @relation("DealerOps")
+  createdAt DateTime       @default(now())
+  invites   DealerInvite[] @relation("InviteCreator")
+}
+
+model Brief {
+  id                 String          @id @default(uuid())
+  buyerId            String
+  buyer              User            @relation(fields: [buyerId], references: [id])
+  status             BriefStatus     @default(sourcing)
+  zipcode            String
+  paymentType        PaymentType
+  maxOTD             Decimal         @db.Decimal(12, 2)
+  makes              String[]
+  models             String[]
+  trims              String[]
+  colors             String[]
+  mustHaves          String[]
+  timelinePreference String
+  paymentPreferences Json?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  invites            DealerInvite[]
+  quotes             Quote[]
+  timelineEvents     TimelineEvent[]
+  dealerProspects    DealerProspect[]
+}
+
+model Dealer {
+  id           String         @id @default(uuid())
+  name         String
+  city         String
+  state        String
+  contactName  String
+  contactEmail String
+  phone        String
+  invites      DealerInvite[]
+  quotes       Quote[]
+  opsOwnerId   String?
+  opsOwner     User?          @relation("DealerOps", fields: [opsOwnerId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  prospects    DealerProspect[]
+}
+
+model DealerInvite {
+  id             String            @id @default(uuid())
+  briefId        String
+  brief          Brief             @relation(fields: [briefId], references: [id])
+  dealerId       String
+  dealer         Dealer            @relation(fields: [dealerId], references: [id])
+  magicLinkToken String            @unique
+  state          DealerInviteState @default(sent)
+  expiresAt      DateTime
+  lastViewedAt   DateTime?
+  createdById    String?
+  createdBy      User?             @relation("InviteCreator", fields: [createdById], references: [id])
+  quotes         Quote[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model DealerProspect {
+  id              String               @id @default(uuid())
+  briefId         String
+  brief           Brief                @relation(fields: [briefId], references: [id])
+  dealerId        String?
+  dealer          Dealer?              @relation(fields: [dealerId], references: [id])
+  name            String
+  brand           String
+  city            String?
+  state           String?
+  zipcode         String?
+  address         String?
+  phone           String?
+  email           String?
+  website         String?
+  source          String?
+  notes           String?
+  driveHours      Float?
+  distanceMiles   Float?
+  status          DealerProspectStatus @default(pending)
+  lastContactedAt DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model Quote {
+  id              String          @id @default(uuid())
+  briefId         String
+  brief           Brief           @relation(fields: [briefId], references: [id])
+  dealerId        String
+  dealer          Dealer          @relation(fields: [dealerId], references: [id])
+  inviteId        String?
+  invite          DealerInvite?   @relation(fields: [inviteId], references: [id])
+  status          QuoteStatus     @default(draft)
+  vin             String?
+  stockNumber     String?
+  year            Int?
+  make            String?
+  model           String?
+  trim            String?
+  extColor        String?
+  intColor        String?
+  etaDate         DateTime?
+  msrp            Decimal?        @db.Decimal(12, 2)
+  dealerDiscount  Decimal?        @db.Decimal(12, 2)
+  docFee          Decimal?        @db.Decimal(12, 2)
+  dmvFee          Decimal?        @db.Decimal(12, 2)
+  tireBatteryFee  Decimal?        @db.Decimal(12, 2)
+  otherFeesTotal  Decimal?        @db.Decimal(12, 2)
+  incentivesTotal Decimal?        @db.Decimal(12, 2)
+  addonsTotal     Decimal?        @db.Decimal(12, 2)
+  taxRate         Decimal?        @db.Decimal(5, 4)
+  taxAmount       Decimal?        @db.Decimal(12, 2)
+  otdTotal        Decimal?        @db.Decimal(12, 2)
+  paymentType     PaymentType?
+  aprOrMf         Decimal?        @db.Decimal(8, 4)
+  termMonths      Int?
+  dasAmount       Decimal?        @db.Decimal(12, 2)
+  evidenceNote    String?
+  paymentSnapshot Json?
+  confirmations   Json?
+  metadata        Json?
+  confidence      Decimal?        @db.Decimal(4, 3)
+  source          QuoteSource     @default(dealer_form)
+  parentQuoteId   String?
+  parentQuote     Quote?          @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
+  revisions       Quote[]         @relation("QuoteRevisions")
+  shadinessScore  Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  lines           QuoteLine[]
+  files           FileAsset[]
+  contract        Contract?
+  timelineEvents  TimelineEvent[]
+}
+
+model QuoteLine {
+  id              String        @id @default(uuid())
+  quoteId         String
+  quote           Quote         @relation(fields: [quoteId], references: [id])
+  kind            QuoteLineKind
+  name            String
+  amount          Decimal       @db.Decimal(12, 2)
+  approvedByBuyer Boolean       @default(false)
+}
+
+model Contract {
+  id         String         @id @default(uuid())
+  quoteId    String         @unique
+  quote      Quote          @relation(fields: [quoteId], references: [id])
+  status     ContractStatus @default(uploaded)
+  checks     Json
+  envelopeId String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  files      FileAsset[]
+}
+
+model TimelineEvent {
+  id        String            @id @default(uuid())
+  briefId   String
+  brief     Brief             @relation(fields: [briefId], references: [id])
+  quoteId   String?
+  quote     Quote?            @relation(fields: [quoteId], references: [id])
+  type      TimelineEventType
+  actor     TimelineActor
+  payload   Json
+  createdAt DateTime          @default(now())
+  files     FileAsset[]
+}
+
+model FileAsset {
+  id           String         @id @default(uuid())
+  ownerType    FileOwnerType
+  ownerId      String
+  url          String
+  mimeType     String
+  originalName String
+  size         Int
+  checksum     String?
+  createdAt    DateTime       @default(now())
+  quoteId      String?
+  timelineId   String?
+  contractId   String?
+  quote        Quote?         @relation(fields: [quoteId], references: [id])
+  timeline     TimelineEvent? @relation(fields: [timelineId], references: [id])
+  contract     Contract?      @relation(fields: [contractId], references: [id])
+}

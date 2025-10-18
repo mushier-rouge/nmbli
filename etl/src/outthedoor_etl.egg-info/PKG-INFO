@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: nmbli-etl
+Version: 0.1.0
+Summary: US Make-Model-Trim ETL
+Author: Nmbli
+Requires-Python: >=3.11
+Requires-Dist: httpx[http2]~=0.27.0
+Requires-Dist: tenacity~=9.0
+Requires-Dist: pydantic~=2.8
+Requires-Dist: sqlalchemy~=2.0
+Requires-Dist: psycopg[binary]~=3.2
+Requires-Dist: rich~=13.7
+Requires-Dist: typer~=0.12
+Requires-Dist: aiodns~=3.0
+Requires-Dist: xmltodict~=0.13
+Provides-Extra: test
+Requires-Dist: pytest~=8.3; extra == "test"
+Requires-Dist: pytest-asyncio~=0.23; extra == "test"
+Requires-Dist: respx~=0.21; extra == "test"
