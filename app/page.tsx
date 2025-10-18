@@ -64,55 +64,28 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="grid">
-          <h1>The car buying assistant that enforces your out-the-door price.</h1>
+          <h1>We call the dealerships for you.</h1>
           <p>
-            Tell us what you’re shopping for. We call dealerships, gather itemized quotes, chase the
-            follow-ups, and line up the contract at the price you approved.
+            Share the car you want. We dial the stores, gather clean out-the-door quotes, and make sure the
+            contract never drifts from the number you approve.
           </p>
           <div className="chips">
-            <span className="chip">We call dealers for you</span>
-            <span className="chip">Clean out-the-door pricing</span>
-            <span className="chip">Contract must match</span>
+            <span className="chip">Dealer calls handled</span>
+            <span className="chip">Itemized OTD pricing</span>
+            <span className="chip">Contract = quote</span>
           </div>
         </div>
         <div className="pilot-card">
-          <strong>Metro pilot · 48h turnaround</strong>
-          <span>Submit a brief and we start dialing within 48 hours. Pilot slots are limited.</span>
+          <strong>Pilot waitlist</strong>
+          <span>Invite-only concierge. Join the list and we’ll reach out when your metro opens.</span>
         </div>
-      </section>
-
-      <section className="grid two">
-        <article className="card">
-          <h2>We handle every dealer call</h2>
-          <p>
-            Your brief gives us the make, budget, and timeline. We contact the right stores, request
-            itemized worksheets, and keep everything moving while you stay out of the showroom.
-          </p>
-          <ul>
-            <li>Itemized worksheets gathered: taxes, fees, add-ons, rebates</li>
-            <li>We run the counters until the price hits your target</li>
-            <li>Updates land in your inbox—no phone tag required</li>
-          </ul>
-        </article>
-        <article className="card">
-          <h2>Guardrails for buyers</h2>
-          <p>
-            We parse every document before e-sign. If the contract drifts from the accepted quote, we flag
-            it and block the signing flow until it’s clean.
-          </p>
-          <ul>
-            <li>Clear timeline of every quote, counter, and approval</li>
-            <li>Automated add-on removal with transparent diffs</li>
-            <li>No-surprise pledge backed by human review</li>
-          </ul>
-        </article>
       </section>
 
       <section className="card" id="waitlist">
         <h2>Join the pilot waitlist</h2>
         <p>
-          Drop your email and metro. When your slot opens, we get on the phone with dealerships and send
-          you the cleaned-up quotes.
+          Drop your email and metro. When your slot opens, we call the dealerships and send you the
+          cleaned-up quotes.
         </p>
         <form onSubmit={handleSubmit} noValidate>
           <label>
