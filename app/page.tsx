@@ -66,34 +66,32 @@ export default function HomePage() {
         <div className="grid">
           <h1>The car buying assistant that enforces your out-the-door price.</h1>
           <p>
-            Send us your brief and we reach out to dealerships on your behalf. We collect itemized quotes,
-            normalize the numbers, run the counteroffers, and lock the contract to the price you approved.
-            No showroom pressure, no last-minute fees—just the keys.
+            Tell us what you’re shopping for. We call dealerships, gather itemized quotes, chase the
+            follow-ups, and line up the contract at the price you approved.
           </p>
           <div className="chips">
-            <span className="chip">Verified OTD quotes</span>
-            <span className="chip">Contract ≠? Quote — we stop it</span>
-            <span className="chip">Negotiation without the phone tag</span>
+            <span className="chip">We call dealers for you</span>
+            <span className="chip">Clean out-the-door pricing</span>
+            <span className="chip">Contract must match</span>
           </div>
         </div>
         <div className="pilot-card">
           <strong>Metro pilot · 48h turnaround</strong>
-          <span>We’re onboarding buyers in select launch metros and calling dealerships for them.</span>
+          <span>Submit a brief and we start dialing within 48 hours. Pilot slots are limited.</span>
         </div>
       </section>
 
       <section className="grid two">
         <article className="card">
-          <h2>We handle the dealer legwork</h2>
+          <h2>We handle every dealer call</h2>
           <p>
-            Your brief arrives with intent, budget, and timing. We turn it into a structured quote request,
-            call the right dealerships, chase down paperwork, and keep the conversation moving while you
-            stay out of the showroom.
+            Your brief gives us the make, budget, and timeline. We contact the right stores, request
+            itemized worksheets, and keep everything moving while you stay out of the showroom.
           </p>
           <ul>
-            <li>Request itemized worksheets: taxes, fees, add-ons, rebates</li>
-            <li>Follow up on counters until the numbers align</li>
-            <li>Confirm the contract matches before you ever sign</li>
+            <li>Itemized worksheets gathered: taxes, fees, add-ons, rebates</li>
+            <li>We run the counters until the price hits your target</li>
+            <li>Updates land in your inbox—no phone tag required</li>
           </ul>
         </article>
         <article className="card">
@@ -113,8 +111,8 @@ export default function HomePage() {
       <section className="card" id="waitlist">
         <h2>Join the pilot waitlist</h2>
         <p>
-          Tell us where you are and how soon you need the car. We’ll reach out when a slot opens in your
-          metro and start contacting dealerships to pull together clean, itemized quotes for you.
+          Drop your email and metro. When your slot opens, we get on the phone with dealerships and send
+          you the cleaned-up quotes.
         </p>
         <form onSubmit={handleSubmit} noValidate>
           <label>
