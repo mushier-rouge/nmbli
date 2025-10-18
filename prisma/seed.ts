@@ -8,7 +8,12 @@ import {
   ContractStatus,
   QuoteSource,
 } from '../src/generated/prisma';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
+
+function generateInviteCode(): string {
+  const value = randomBytes(4).readUInt32BE(0) % 1_000_000;
+  return value.toString().padStart(6, '0');
+}
 
 const prisma = new PrismaClient();
 
@@ -213,7 +218,7 @@ async function main() {
   const knownCodes = new Set(existingDevInvites.map((entry) => entry.code));
 
   while (knownCodes.size + pendingCodes.length < desiredCount) {
-    const candidate = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    const candidate = generateInviteCode();
     if (knownCodes.has(candidate) || pendingCodes.some((entry) => entry.code === candidate)) {
       continue;
     }
