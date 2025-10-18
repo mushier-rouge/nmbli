@@ -119,6 +119,9 @@ export function LoginForm() {
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Sending link…' : 'Email me a link'}
             </Button>
+            <p className="text-xs text-muted-foreground">
+              We&apos;ll prompt for your invite code right after you sign in.
+            </p>
           </form>
         </Form>
       </CardContent>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
+import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
+
 const DEBUG_AUTH = process.env.DEBUG_AUTH?.toLowerCase() === 'true';
 
 function debugAuth(scope: string, message: string, payload?: Record<string, unknown>) {
@@ -13,7 +15,7 @@ function debugAuth(scope: string, message: string, payload?: Record<string, unkn
 }
 
 
-const AUTH_PATHS = [/^\/brief/, /^\/buyer/, /^\/dashboard/, /^\/offers/, /^\/ops/];
+const AUTH_PATHS = [/^\/brief/, /^\/buyer/, /^\/dashboard/, /^\/offers/, /^\/ops/, /^\/invite-code/];
 const OPS_ONLY_PATHS = [/^\/ops/];
 
 function pathMatches(path: string, matchers: RegExp[]) {
@@ -88,6 +90,26 @@ export async function middleware(request: NextRequest) {
   });
   if (pathMatches(pathname, OPS_ONLY_PATHS) && role !== 'ops') {
     return NextResponse.redirect(new URL('/not-authorized', request.url));
+  }
+
+  const requireInvite = shouldRequireInviteCode();
+  const isInvitePage = pathname.startsWith('/invite-code');
+  const inviteCookie = request.cookies.get('devInviteGranted')?.value === 'true';
+  const inviteUser = request.cookies.get('devInviteUser')?.value;
+  const metadataInvite = hasInviteAccess(session.user.user_metadata ?? {});
+  const inviteSatisfied = metadataInvite || (inviteCookie && inviteUser === session.user.id);
+
+  if (requireInvite && role === 'buyer' && !inviteSatisfied) {
+    if (!isInvitePage) {
+      const inviteUrl = new URL('/invite-code', request.url);
+      const nextTarget = `${pathname}${request.nextUrl.search}`;
+      inviteUrl.searchParams.set('next', nextTarget);
+      return NextResponse.redirect(inviteUrl);
+    }
+  } else if (isInvitePage && inviteSatisfied) {
+    const nextParam = request.nextUrl.searchParams.get('next');
+    const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : '/briefs';
+    return NextResponse.redirect(new URL(nextPath, request.url));
   }
 
   return response;
