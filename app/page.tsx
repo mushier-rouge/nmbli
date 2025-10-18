@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { supabaseClient } from '../lib/supabase-client';
+import { isValidZip } from '../lib/zip';
 
 interface StatusState {
   tone: 'idle' | 'loading' | 'success' | 'error';
@@ -25,11 +26,15 @@ export default function HomePage() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const email = (formData.get('email') ?? '').toString().trim();
-    const location = (formData.get('location') ?? '').toString().trim() || null;
-    const brief = (formData.get('brief') ?? '').toString().trim();
+    const zip = (formData.get('zip') ?? '').toString().trim();
 
-    if (!email || !brief) {
-      setStatus({ tone: 'error', message: 'Email and brief are required.' });
+    if (!email) {
+      setStatus({ tone: 'error', message: 'Email is required.' });
+      return;
+    }
+
+    if (!isValidZip(zip)) {
+      setStatus({ tone: 'error', message: 'Enter a valid 5-digit ZIP (optional +4 allowed).' });
       return;
     }
 
@@ -37,7 +42,11 @@ export default function HomePage() {
 
     const { error } = await supabaseClient
       .from('waitlist_signups')
-      .insert({ email, location, brief });
+      .insert({
+        email,
+        location: zip,
+        brief: 'Zip waitlist signup',
+      });
 
     if (error) {
       console.error(error);
@@ -66,8 +75,8 @@ export default function HomePage() {
         <div className="grid">
           <h1>We reach out to dealerships for you.</h1>
           <p>
-            Share the car you want. We dial the stores, gather clean out-the-door quotes, and make sure the
-            contract never drifts from the number you approve.
+            Share your contact info. We reach out to dealerships, gather clean out-the-door quotes, and
+            make sure the contract never drifts from the number you approve.
           </p>
           <div className="chips">
             <span className="chip">Dealer outreach handled</span>
@@ -84,8 +93,8 @@ export default function HomePage() {
       <section className="card" id="waitlist">
         <h2>Join the pilot waitlist</h2>
         <p>
-          Drop your email and metro. When your slot opens, we reach out to the dealerships and send you the
-          cleaned-up quotes.
+          Drop your email and ZIP code. When your slot opens, we reach out to the dealerships and send you
+          the cleaned-up quotes.
         </p>
         <form onSubmit={handleSubmit} noValidate>
           <label>
@@ -93,16 +102,8 @@ export default function HomePage() {
             <input type="email" name="email" placeholder="you@example.com" required autoComplete="email" />
           </label>
           <label>
-            Metro or ZIP (optional)
-            <input type="text" name="location" placeholder="e.g. 94105" autoComplete="postal-code" />
-          </label>
-          <label>
-            What are you shopping for?
-            <textarea
-              name="brief"
-              placeholder="2025 RAV4 XSE, leasing, want delivery before December"
-              required
-            />
+            ZIP code
+            <input type="text" name="zip" placeholder="e.g. 94105" inputMode="numeric" autoComplete="postal-code" required />
           </label>
           <button type="submit" disabled={status.tone === 'loading'}>
             {status.tone === 'loading' ? 'Submitting…' : 'Reserve a spot'}
