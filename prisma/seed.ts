@@ -206,6 +206,26 @@ async function main() {
       checks: { status: 'pending' },
     },
   });
+
+  const existingDevInvites = await prisma.devInviteCode.findMany({ select: { code: true } });
+  const desiredCount = 5;
+  const pendingCodes: Array<{ code: string }> = [];
+  const knownCodes = new Set(existingDevInvites.map((entry) => entry.code));
+
+  while (knownCodes.size + pendingCodes.length < desiredCount) {
+    const candidate = randomInt(0, 1_000_000).toString().padStart(6, '0');
+    if (knownCodes.has(candidate) || pendingCodes.some((entry) => entry.code === candidate)) {
+      continue;
+    }
+    pendingCodes.push({ code: candidate });
+  }
+
+  if (pendingCodes.length > 0) {
+    await prisma.devInviteCode.createMany({ data: pendingCodes });
+  }
+
+  const finalCodes = await prisma.devInviteCode.findMany({ select: { code: true }, orderBy: { code: 'asc' } });
+  console.info('Seeded dev invite codes:', finalCodes.map((entry) => entry.code));
 }
 
 main()

@@ -3,10 +3,11 @@ import { z } from 'zod';
 
 import { requireSession } from '@/lib/auth/session';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
-import { parseInviteCodes, shouldRequireInviteCode } from '@/lib/invite/config';
+import { shouldRequireInviteCode } from '@/lib/invite/config';
+import { prisma } from '@/lib/prisma';
 
 const requestSchema = z.object({
-  code: z.string().min(3, 'Invite code must be at least 3 characters'),
+  code: z.string().regex(/^\d{6}$/u, 'Invite code must be a 6-digit number'),
 });
 
 function setInviteCookies(response: NextResponse, userId: string) {
@@ -48,16 +49,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: parsed.error.errors[0]?.message ?? 'Invalid invite code' }, { status: 400 });
   }
 
-  const inviteCodes = parseInviteCodes();
-  if (inviteCodes.length === 0) {
-    return NextResponse.json({ message: 'Invite codes are not configured' }, { status: 400 });
+  const submittedCode = parsed.data.code.trim();
+  const normalizedCode = submittedCode.replace(/\s+/g, '');
+
+  const existingInvite = await prisma.devInviteCode.findUnique({ where: { code: normalizedCode } });
+
+  if (!existingInvite) {
+    return NextResponse.json({ message: 'That invite code has already been used or is invalid' }, { status: 400 });
   }
 
-  const submittedCode = parsed.data.code.trim();
-  const matched = inviteCodes.find((value) => value.localeCompare(submittedCode, undefined, { sensitivity: 'accent' }) === 0);
-
-  if (!matched) {
-    return NextResponse.json({ message: 'That invite code is not valid yet' }, { status: 400 });
+  // Optimistically consume the invite code before we persist metadata. We'll restore it if anything fails.
+  try {
+    await prisma.devInviteCode.delete({ where: { code: normalizedCode } });
+  } catch (error) {
+    console.error('Failed to consume invite code', { code: normalizedCode, error });
+    return NextResponse.json({ message: 'That invite code has already been used' }, { status: 400 });
   }
 
   const response = NextResponse.json({ status: 'granted' });
@@ -66,13 +72,19 @@ export async function POST(request: NextRequest) {
     data: {
       ...session.metadata,
       devInviteGranted: true,
-      devInviteCode: matched,
+      devInviteCode: normalizedCode,
       devInviteGrantedAt: new Date().toISOString(),
     },
   });
 
   if (error) {
     console.error('Failed to persist invite grant', error);
+    // Restore the invite code so it can be used again.
+    try {
+      await prisma.devInviteCode.create({ data: { code: normalizedCode } });
+    } catch (restoreError) {
+      console.error('Failed to restore invite code after error', { code: normalizedCode, restoreError });
+    }
     return NextResponse.json({ message: 'Could not confirm invite access' }, { status: 500 });
   }
 

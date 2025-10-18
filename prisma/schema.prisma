@@ -191,6 +191,12 @@ model DealerProspect {
   updatedAt       DateTime             @updatedAt
 }
 
+model DevInviteCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  createdAt DateTime @default(now())
+}
+
 model Quote {
   id              String          @id @default(uuid())
   briefId         String

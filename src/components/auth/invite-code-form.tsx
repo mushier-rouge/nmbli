@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
-  code: z.string().min(3, 'Invite code must be at least 3 characters'),
+  code: z.string().regex(/^\d{6}$/u, 'Invite code must be a 6-digit number'),
 });
 
 interface InviteCodeFormProps {
@@ -81,7 +81,13 @@ export function InviteCodeForm({ nextPath }: InviteCodeFormProps) {
             <FormItem>
               <FormLabel>Invite code</FormLabel>
               <FormControl>
-                <Input {...field} autoComplete="one-time-code" placeholder="e.g. NMBLI-ALPHA" />
+                <Input
+                  {...field}
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="123456"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
