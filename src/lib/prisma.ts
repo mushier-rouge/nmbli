@@ -25,11 +25,16 @@ export const TimelineActor = {
   system: 'system',
 } as const;
 
-if (!(Prisma as any).TimelineEventType) {
-  (Prisma as any).TimelineEventType = TimelineEventType;
+const prismaNamespace = Prisma as unknown as {
+  TimelineEventType?: typeof TimelineEventType;
+  TimelineActor?: typeof TimelineActor;
+};
+
+if (!prismaNamespace.TimelineEventType) {
+  prismaNamespace.TimelineEventType = TimelineEventType;
 }
-if (!(Prisma as any).TimelineActor) {
-  (Prisma as any).TimelineActor = TimelineActor;
+if (!prismaNamespace.TimelineActor) {
+  prismaNamespace.TimelineActor = TimelineActor;
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };

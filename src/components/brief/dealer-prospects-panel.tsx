@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -96,7 +96,7 @@ export function DealerProspectsPanel({ briefId, defaultZip, defaultBrands, prosp
   const [busyProspectId, setBusyProspectId] = useState<string | null>(null);
 
   const form = useForm<DealerProspectFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<DealerProspectFormValues>,
     defaultValues: {
       brands: defaultBrands.join(', '),
       zip: defaultZip,

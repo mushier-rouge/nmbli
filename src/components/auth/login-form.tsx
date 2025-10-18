@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const schema = z.object({
   email: z.string().email(),
-  roleHint: z.enum(['buyer', 'dealer', 'ops']).default('buyer'),
+  roleHint: z.enum(['buyer', 'dealer', 'ops']),
 });
 
 export function LoginForm() {

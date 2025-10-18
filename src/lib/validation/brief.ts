@@ -10,6 +10,16 @@ export const createBriefSchema = z.object({
   colors: z.array(z.string().min(1)).optional().default([]),
   mustHaves: z.array(z.string().min(1)).optional().default([]),
   timelinePreference: z.string().min(3),
+  paymentPreferences: z
+    .array(
+      z.object({
+        type: z.enum(['cash', 'finance', 'lease']),
+        downPayment: z.number().nonnegative().optional(),
+        monthlyBudget: z.number().positive().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 export type CreateBriefInput = z.infer<typeof createBriefSchema>;

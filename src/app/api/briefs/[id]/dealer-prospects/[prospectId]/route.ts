@@ -5,7 +5,7 @@ import { canAccessBrief } from '@/lib/auth/roles';
 import { prisma } from '@/lib/prisma';
 import { updateDealerProspect } from '@/lib/services/dealer-prospects';
 import { dealerProspectStatusSchema } from '@/lib/validation/dealer-prospect';
-import type { Prisma } from '@/generated/prisma';
+import type { DealerProspectStatus } from '@/generated/prisma';
 
 export async function PATCH(request: NextRequest, {
   params,
@@ -34,7 +34,7 @@ export async function PATCH(request: NextRequest, {
 
     const updated = await updateDealerProspect({
       prospectId,
-      status: parsed.status as Prisma.DealerProspectStatus,
+      status: parsed.status as DealerProspectStatus,
       notes: parsed.notes ?? prospect.notes,
       markContacted: parsed.status === 'contacted',
     });

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export async function getSupabaseServerClient(): Promise<SupabaseClient> {

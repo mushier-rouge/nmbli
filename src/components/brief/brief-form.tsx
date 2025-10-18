@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -65,7 +65,7 @@ export function BriefForm() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: {
       zipcode: '',
       maxOTD: 45000,
@@ -163,7 +163,7 @@ export function BriefForm() {
       return;
     }
 
-    if (!modelEntry.trims.includes(selectedTrim)) {
+    if (selectedTrim && !modelEntry.trims.includes(selectedTrim)) {
       const nextTrim = modelEntry.trims[0];
       if (nextTrim !== selectedTrim) {
         form.setValue('trims', nextTrim);

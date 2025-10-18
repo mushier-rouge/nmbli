@@ -4,7 +4,6 @@ import createNextPWA from '@ducanh2912/next-pwa';
 const withPWA = createNextPWA({
   dest: 'public',
   register: true,
-  skipWaiting: true,
   scope: '/',
   sw: 'service-worker.js',
   workboxOptions: {
