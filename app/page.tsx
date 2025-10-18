@@ -64,13 +64,13 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="grid">
-          <h1>We call the dealerships for you.</h1>
+          <h1>We reach out to dealerships for you.</h1>
           <p>
             Share the car you want. We dial the stores, gather clean out-the-door quotes, and make sure the
             contract never drifts from the number you approve.
           </p>
           <div className="chips">
-            <span className="chip">Dealer calls handled</span>
+            <span className="chip">Dealer outreach handled</span>
             <span className="chip">Itemized OTD pricing</span>
             <span className="chip">Contract = quote</span>
           </div>
@@ -84,7 +84,7 @@ export default function HomePage() {
       <section className="card" id="waitlist">
         <h2>Join the pilot waitlist</h2>
         <p>
-          Drop your email and metro. When your slot opens, we call the dealerships and send you the
+          Drop your email and metro. When your slot opens, we reach out to the dealerships and send you the
           cleaned-up quotes.
         </p>
         <form onSubmit={handleSubmit} noValidate>
