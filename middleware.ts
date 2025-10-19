@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
 const DEBUG_AUTH = process.env.DEBUG_AUTH?.toLowerCase() === 'true';
 
@@ -31,6 +31,12 @@ const OPS_ONLY_PATHS = [/^\/ops/];
 
 function pathMatches(path: string, matchers: RegExp[]) {
   return matchers.some((regex) => regex.test(path));
+}
+
+function mergeCookies(source: NextResponse, target: NextResponse) {
+  for (const cookie of source.cookies.getAll()) {
+    target.cookies.set(cookie);
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -71,19 +77,13 @@ export async function middleware(request: NextRequest) {
   let session = null;
 
   try {
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          response.cookies.set({ name, value: '', ...options });
-        },
+    const supabase = createMiddlewareClient(
+      { req: request, res: response },
+      {
+        supabaseUrl,
+        supabaseKey: supabaseAnonKey,
       },
-    });
+    );
 
     const supabaseSession = await supabase.auth.getSession();
     session = supabaseSession.data.session;
@@ -94,14 +94,18 @@ export async function middleware(request: NextRequest) {
     });
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    mergeCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
   if (!session) {
     debugAuth('middleware', 'No session detected', { path: pathname });
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    mergeCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
   const role = (session.user.user_metadata?.role as string | undefined) ?? 'buyer';
@@ -111,7 +115,9 @@ export async function middleware(request: NextRequest) {
     email: session.user.email,
   });
   if (pathMatches(pathname, OPS_ONLY_PATHS) && role !== 'ops') {
-    return NextResponse.redirect(new URL('/not-authorized', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/not-authorized', request.url));
+    mergeCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
   const requireInvite = shouldRequireInviteCode();
@@ -126,12 +132,16 @@ export async function middleware(request: NextRequest) {
       const inviteUrl = new URL('/invite-code', request.url);
       const nextTarget = `${pathname}${request.nextUrl.search}`;
       inviteUrl.searchParams.set('next', nextTarget);
-      return NextResponse.redirect(inviteUrl);
+      const redirectResponse = NextResponse.redirect(inviteUrl);
+      mergeCookies(response, redirectResponse);
+      return redirectResponse;
     }
   } else if (isInvitePage && inviteSatisfied) {
     const nextParam = request.nextUrl.searchParams.get('next');
     const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : '/briefs';
-    return NextResponse.redirect(new URL(nextPath, request.url));
+    const redirectResponse = NextResponse.redirect(new URL(nextPath, request.url));
+    mergeCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
   return response;
