@@ -4,6 +4,15 @@ const DEBUG_AUTH = (process.env.DEBUG_AUTH ?? '').toLowerCase() === 'true';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 const COOKIE_CHUNK_SIZE = 3180;
 
+if (typeof (globalThis as Record<string, unknown>).__dirname === 'undefined') {
+  Object.defineProperty(globalThis, '__dirname', {
+    value: '/',
+    configurable: false,
+    enumerable: false,
+    writable: false,
+  });
+}
+
 console.info('[middleware] module init');
 
 function shouldRequireInviteCode() {
