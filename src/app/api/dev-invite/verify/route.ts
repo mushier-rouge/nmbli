@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   const parsed = requestSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: parsed.error.errors[0]?.message ?? 'Invalid invite code' }, { status: 400 });
+    return NextResponse.json({ message: parsed.error.issues[0]?.message ?? 'Invalid invite code' }, { status: 400 });
   }
 
   const submittedCode = parsed.data.code.trim();
