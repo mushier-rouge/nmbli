@@ -1,25 +1,22 @@
 import { z } from 'zod';
 
+const paymentPreferenceSchema = z.object({
+  type: z.enum(['cash', 'finance', 'lease']),
+  downPayment: z.number().nonnegative().optional(),
+  monthlyBudget: z.number().positive().optional(),
+});
+
 export const createBriefSchema = z.object({
   zipcode: z.string().min(5).max(10),
   paymentType: z.enum(['cash', 'finance', 'lease']),
-  maxOTD: z.coerce.number().positive(),
+  paymentPreferences: z.array(paymentPreferenceSchema).optional(),
+  maxOTD: z.number().positive(),
   makes: z.array(z.string().min(1)).min(1),
   models: z.array(z.string().min(1)).min(1),
   trims: z.array(z.string().min(1)).optional().default([]),
   colors: z.array(z.string().min(1)).optional().default([]),
   mustHaves: z.array(z.string().min(1)).optional().default([]),
   timelinePreference: z.string().min(3),
-  paymentPreferences: z
-    .array(
-      z.object({
-        type: z.enum(['cash', 'finance', 'lease']),
-        downPayment: z.number().nonnegative().optional(),
-        monthlyBudget: z.number().positive().optional(),
-      }),
-    )
-    .optional()
-    .default([]),
 });
 
 export type CreateBriefInput = z.infer<typeof createBriefSchema>;

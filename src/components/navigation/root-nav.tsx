@@ -43,7 +43,7 @@ export function RootNav({ session }: RootNavProps) {
     <header className="border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 text-sm">
         <Link href="/" className="font-semibold">
-          Nmbli
+          OutTheDoor
         </Link>
         {session ? (
           <div className="flex items-center gap-4">

@@ -1,12 +1,5 @@
-import {
-  Prisma,
-  ContractStatus as ContractStatusEnum,
-  FileOwnerType as FileOwnerTypeEnum,
-  QuoteLineKind as QuoteLineKindEnum,
-  QuoteStatus as QuoteStatusEnum,
-  TimelineActor as TimelineActorEnum,
-  TimelineEventType as TimelineEventTypeEnum,
-} from '@/generated/prisma';
+import { Prisma, ContractStatus, FileOwnerType, QuoteLineKind, QuoteStatus } from '@/generated/prisma';
+import type { TimelineActor as TimelineActorType, TimelineEventType as TimelineEventTypeType } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { toDecimal } from '@/lib/utils/prisma-helpers';
 import type { ContractDiffInput } from '@/lib/validation/contract';
@@ -23,7 +16,7 @@ export function compareAmounts(expected: Prisma.Decimal | null, actual: number, 
   return diff <= tolerance;
 }
 
-function normalizeMap(items: { name: string; amount: number }[]) {
+export function normalizeMap(items: { name: string; amount: number }[]) {
   const map = new Map<string, number>();
   for (const item of items) {
     map.set(item.name.toLowerCase(), item.amount);
@@ -78,19 +71,19 @@ export async function uploadContractFiles(params: { quoteId: string; files: File
     throw new Error('Quote not found');
   }
 
-  if (quote.status !== QuoteStatusEnum.accepted) {
+  if (quote.status !== QuoteStatus.accepted) {
     throw new Error('Contract files can only be uploaded for accepted quotes');
   }
 
   const contract = quote.contract
     ? await prisma.contract.update({
         where: { id: quote.contract.id },
-        data: { status: ContractStatusEnum.uploaded },
+        data: { status: ContractStatus.uploaded },
       })
     : await prisma.contract.create({
         data: {
           quoteId,
-          status: ContractStatusEnum.uploaded,
+          status: ContractStatus.uploaded,
           checks: { status: 'pending' },
         },
       });
@@ -101,7 +94,7 @@ export async function uploadContractFiles(params: { quoteId: string; files: File
         const upload = await uploadFileToStorage({ file, pathPrefix: `contracts/${quoteId}` });
         await prisma.fileAsset.create({
           data: {
-            ownerType: FileOwnerTypeEnum.contract,
+            ownerType: FileOwnerType.contract,
             ownerId: contract.id,
             url: upload.url,
             mimeType: upload.mimeType,
@@ -117,8 +110,8 @@ export async function uploadContractFiles(params: { quoteId: string; files: File
   await recordTimelineEvent({
     briefId: quote.briefId,
     quoteId: quote.id,
-    type: TimelineEventTypeEnum.contract_uploaded,
-    actor: TimelineActorEnum.dealer,
+    type: 'contract_uploaded' as TimelineEventTypeType,
+    actor: 'dealer' as TimelineActorType,
     payload: {
       contractId: contract.id,
       fileCount: files.length,
@@ -177,7 +170,7 @@ export async function checkContractAgainstQuote(params: { contractId: string; in
     actual: input.dealerDiscount,
   });
 
-  const quoteIncentives = quote.lines.filter((line) => line.kind === QuoteLineKindEnum.incentive);
+  const quoteIncentives = quote.lines.filter((line) => line.kind === QuoteLineKind.incentive);
   const incentiveFailures = compareCollections(
     quoteIncentives.map((line) => ({ name: line.name, amount: line.amount })),
     input.incentives,
@@ -197,7 +190,7 @@ export async function checkContractAgainstQuote(params: { contractId: string; in
       { name: 'dmvFee', amount: quote.dmvFee ?? toDecimal(0) },
       { name: 'tireBatteryFee', amount: quote.tireBatteryFee ?? toDecimal(0) },
       ...quote.lines
-        .filter((line) => line.kind === QuoteLineKindEnum.fee && !['Doc Fee', 'DMV / Registration', 'Tire & Battery'].includes(line.name))
+        .filter((line) => line.kind === QuoteLineKind.fee && !['Doc Fee', 'DMV / Registration', 'Tire & Battery'].includes(line.name))
         .map((line) => ({ name: line.name, amount: line.amount })),
     ],
     [
@@ -216,7 +209,7 @@ export async function checkContractAgainstQuote(params: { contractId: string; in
       dmvFee: quote.dmvFee?.toNumber() ?? 0,
       tireBatteryFee: quote.tireBatteryFee?.toNumber() ?? 0,
       otherFees: quote.lines
-        .filter((line) => line.kind === QuoteLineKindEnum.fee)
+        .filter((line) => line.kind === QuoteLineKind.fee)
         .map((line) => ({ name: line.name, amount: line.amount.toNumber() })),
     },
     actual: input.fees,
@@ -228,7 +221,7 @@ export async function checkContractAgainstQuote(params: { contractId: string; in
     field: 'addons',
     pass: addonFailures.length === 0,
     expected: quote.lines
-      .filter((line) => line.kind === QuoteLineKindEnum.addon)
+      .filter((line) => line.kind === QuoteLineKind.addon)
       .map((line) => ({ name: line.name, approvedByBuyer: line.approvedByBuyer })),
     actual: input.addons,
     notes: addonFailures.length ? 'Unapproved addons present' : undefined,
@@ -257,25 +250,24 @@ export async function checkContractAgainstQuote(params: { contractId: string; in
   });
 
   const allPass = checks.every((item) => item.pass);
-  const checksJson = checks.map((item) => ({ ...item })) as Prisma.JsonArray;
 
   const updated = await prisma.contract.update({
     where: { id: contractId },
     data: {
-      status: allPass ? ContractStatusEnum.checked_ok : ContractStatusEnum.mismatch,
-      checks: checksJson,
+      status: allPass ? ContractStatus.checked_ok : ContractStatus.mismatch,
+      checks: checks as Prisma.InputJsonValue,
     },
   });
 
   await recordTimelineEvent({
     briefId: quote.briefId,
     quoteId: quote.id,
-    type: allPass ? TimelineEventTypeEnum.contract_pass : TimelineEventTypeEnum.contract_mismatch,
-    actor: TimelineActorEnum.system,
+    type: (allPass ? 'contract_pass' : 'contract_mismatch') as TimelineEventTypeType,
+    actor: 'system' as TimelineActorType,
     payload: {
       contractId,
-      checks: checksJson,
-    },
+      checks,
+    } as Prisma.InputJsonValue,
   });
 
   if (allPass) {

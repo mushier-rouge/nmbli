@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 
 import { getSessionContext } from '@/lib/auth/session';
-import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,10 +9,6 @@ export default async function HomePage() {
 
   if (!session) {
     redirect('/login');
-  }
-
-  if (shouldRequireInviteCode() && session.role === 'buyer' && !hasInviteAccess(session.metadata)) {
-    redirect('/invite-code');
   }
 
   if (session.role === 'ops') {

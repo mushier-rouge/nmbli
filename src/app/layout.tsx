@@ -21,6 +21,8 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Nmbli — Calm car buying with transparent OTD quotes',
   description:

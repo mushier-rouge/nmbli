@@ -12,7 +12,7 @@ export default async function DealerPortalPage({ params }: { params: Promise<{ t
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-4 px-4 text-center">
         <h1 className="text-2xl font-semibold">Invite not found</h1>
-        <p className="text-sm text-muted-foreground">Check with your Nmbli contact for a fresh link.</p>
+        <p className="text-sm text-muted-foreground">Check with your OutTheDoor contact for a fresh link.</p>
       </main>
     );
   }
@@ -41,7 +41,7 @@ export default async function DealerPortalPage({ params }: { params: Promise<{ t
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>Include doc fees, DMV, add-ons, incentives, and upload the signed buyer order. We&apos;ll normalize everything for the buyer.</p>
           <p>
-            Need help? Email <Link href="mailto:ops@nmbli.app" className="text-primary underline">ops@nmbli.app</Link>.
+            Need help? Email <Link href="mailto:ops@outthedoor.app" className="text-primary underline">ops@outthedoor.app</Link>.
           </p>
         </CardContent>
       </Card>

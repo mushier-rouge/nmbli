@@ -1,11 +1,15 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { listBuyerBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
+import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
 import { formatCurrency } from '@/lib/utils/number';
+
+export const dynamic = 'force-dynamic';
 
 type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
 
@@ -43,6 +47,11 @@ export default async function BriefsPage() {
         </Button>
       </main>
     );
+  }
+
+  const requireInvite = shouldRequireInviteCode();
+  if (requireInvite && !hasInviteAccess(session.metadata ?? {})) {
+    redirect('/invite-code?next=/briefs');
   }
 
   const briefs = await listBuyerBriefs(session.userId);

@@ -7,6 +7,8 @@ import { listLatestBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { formatCurrency } from '@/lib/utils/number';
 
+export const dynamic = 'force-dynamic';
+
 type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
 
 function formatPaymentSummary(paymentPreferences: unknown, fallbackType: string | null) {

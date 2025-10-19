@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { CreateBriefInput } from '@/lib/validation/brief';
@@ -15,12 +15,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { VEHICLE_CATALOG } from '@/data/make-model-trims';
 
 const formSchema = z.object({
   zipcode: z.string().min(5).max(10),
-  maxOTD: z.coerce.number().positive(),
+  maxOTD: z.number().positive(),
   makes: z.string().min(1),
   models: z.string().min(1),
   trims: z.string().optional(),
@@ -65,7 +63,7 @@ export function BriefForm() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as Resolver<FormValues>,
+    resolver: zodResolver(formSchema),
     defaultValues: {
       zipcode: '',
       maxOTD: 45000,
@@ -79,17 +77,6 @@ export function BriefForm() {
   });
 
   const paymentOptionEntries = useMemo(() => Object.entries(paymentCopy) as [PaymentType, { title: string; description: string }][], []);
-
-  const selectedMake = form.watch('makes');
-  const selectedModel = form.watch('models');
-  const selectedTrim = form.watch('trims');
-
-  const catalogEntry = useMemo(
-    () => VEHICLE_CATALOG.find((entry) => entry.make === selectedMake),
-    [selectedMake],
-  );
-
-  const modelEntry = useMemo(() => catalogEntry?.models.find((model) => model.name === selectedModel), [catalogEntry, selectedModel]);
 
   const resetPaymentOptions = () => setPaymentOptions(createInitialPaymentOptions());
 
@@ -112,64 +99,6 @@ export function BriefForm() {
       },
     }));
   };
-
-  useEffect(() => {
-    if (!selectedMake) {
-      if (selectedModel) {
-        form.setValue('models', '');
-      }
-      if (selectedTrim) {
-        form.setValue('trims', '');
-      }
-      return;
-    }
-
-    if (!catalogEntry) {
-      return;
-    }
-
-    const hasModel = catalogEntry.models.some((model) => model.name === selectedModel);
-    if (!hasModel) {
-      const nextModel = catalogEntry.models[0]?.name ?? '';
-      if (nextModel !== selectedModel) {
-        form.setValue('models', nextModel);
-      }
-      const nextTrim = catalogEntry.models[0]?.trims[0] ?? '';
-      if (nextTrim !== selectedTrim) {
-        form.setValue('trims', nextTrim);
-      }
-    }
-  }, [selectedMake, catalogEntry, selectedModel, selectedTrim, form]);
-
-  useEffect(() => {
-    if (!selectedModel) {
-      if (selectedTrim) {
-        form.setValue('trims', '');
-      }
-      return;
-    }
-
-    if (!modelEntry) {
-      if (selectedTrim) {
-        form.setValue('trims', '');
-      }
-      return;
-    }
-
-    if (modelEntry.trims.length === 0) {
-      if (selectedTrim) {
-        form.setValue('trims', '');
-      }
-      return;
-    }
-
-    if (selectedTrim && !modelEntry.trims.includes(selectedTrim)) {
-      const nextTrim = modelEntry.trims[0];
-      if (nextTrim !== selectedTrim) {
-        form.setValue('trims', nextTrim);
-      }
-    }
-  }, [selectedModel, modelEntry, selectedTrim, form]);
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
@@ -373,31 +302,15 @@ export function BriefForm() {
           {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="makes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Make</FormLabel>
+                <FormLabel>Makes</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value || ''}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                    }}
-                  >
-                    <SelectTrigger aria-label="Select make">
-                      <SelectValue placeholder="Select a make" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {VEHICLE_CATALOG.map((entry) => (
-                        <SelectItem key={entry.make} value={entry.make}>
-                          {entry.make}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Textarea placeholder="Toyota, Honda" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -408,64 +321,25 @@ export function BriefForm() {
             name="models"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Model</FormLabel>
+                <FormLabel>Models</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value || ''}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                    }}
-                    disabled={!catalogEntry}
-                  >
-                    <SelectTrigger aria-label="Select model">
-                      <SelectValue placeholder={catalogEntry ? 'Select a model' : 'Select a make first'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {catalogEntry?.models.map((model) => (
-                        <SelectItem key={model.name} value={model.name}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Textarea placeholder="Grand Highlander, Pilot" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
           <FormField
             control={form.control}
             name="trims"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Trim</FormLabel>
+                <FormLabel>Preferred trims</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value || ''}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                    }}
-                    disabled={!modelEntry || modelEntry.trims.length === 0}
-                  >
-                    <SelectTrigger aria-label="Select trim">
-                      <SelectValue
-                        placeholder={
-                          modelEntry
-                            ? modelEntry.trims.length > 0
-                              ? 'Select a trim'
-                              : 'No trims listed'
-                            : 'Select a model first'
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelEntry?.trims.map((trim) => (
-                        <SelectItem key={trim} value={trim}>
-                          {trim}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Textarea placeholder="Limited, Touring" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

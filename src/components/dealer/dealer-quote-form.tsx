@@ -28,7 +28,7 @@ const formSchema = dealerQuoteSchema.extend({
   otdTotal: z.number().nonnegative(),
 });
 
-type DealerQuoteFormValues = z.infer<typeof formSchema>;
+type DealerQuoteFormValues = z.input<typeof formSchema>;
 
 function numberInputProps(field: { value: number | undefined; onChange: (value: number) => void }) {
   return {
@@ -47,7 +47,7 @@ export function DealerQuoteForm({ token }: DealerQuoteFormProps) {
   const [primaryFile, setPrimaryFile] = useState<File | null>(null);
   const [supportingFiles, setSupportingFiles] = useState<File[]>([]);
 
-  const form = useForm({
+  const form = useForm<DealerQuoteFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       vin: '',
@@ -135,8 +135,8 @@ export function DealerQuoteForm({ token }: DealerQuoteFormProps) {
   }
 
   const totalIncentives = useMemo(() => {
-    const incentivesList = form.watch('incentives') ?? [];
-    return incentivesList.reduce((sum, incentive) => sum + (incentive?.amount ?? 0), 0);
+    const incentives = form.watch('incentives') ?? [];
+    return incentives.reduce((sum, incentive) => sum + (incentive?.amount ?? 0), 0);
   }, [form]);
 
   return (

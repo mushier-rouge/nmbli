@@ -1,19 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-import { hasInviteAccess as sessionHasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const DEBUG_AUTH = (process.env.DEBUG_AUTH ?? '').toLowerCase() === 'true';
+const AUTH_PATHS = [/^\/brief/, /^\/buyer/, /^\/dashboard/, /^\/offers/, /^\/ops/, /^\/invite-code/];
+const OPS_ONLY_PATHS = [/^\/ops/];
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 const COOKIE_CHUNK_SIZE = 3180;
-
-if (typeof (globalThis as Record<string, unknown>).__dirname === 'undefined') {
-  Object.defineProperty(globalThis, '__dirname', {
-    value: '/',
-    configurable: false,
-    enumerable: false,
-    writable: false,
-  });
-}
 
 function debugAuth(scope: string, message: string, payload?: Record<string, unknown>) {
   if (!DEBUG_AUTH) return;
@@ -24,8 +16,18 @@ function debugAuth(scope: string, message: string, payload?: Record<string, unkn
   }
 }
 
-const AUTH_PATHS = [/^\/brief/, /^\/buyer/, /^\/dashboard/, /^\/offers/, /^\/ops/, /^\/invite-code/];
-const OPS_ONLY_PATHS = [/^\/ops/];
+function shouldRequireInviteCode() {
+  return (process.env.DEV_REQUIRE_INVITE_CODE ?? '').toLowerCase() === 'true';
+}
+
+function metadataHasInvite(metadata: Record<string, unknown> | null | undefined) {
+  if (!metadata) return false;
+  const value = metadata.devInviteGranted ?? metadata.dev_invite_granted;
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+  return Boolean(value);
+}
 
 function pathMatches(path: string, matchers: RegExp[]) {
   return matchers.some((regex) => regex.test(path));
@@ -37,13 +39,28 @@ function mergeCookies(source: NextResponse, target: NextResponse) {
   }
 }
 
+function decodeBase64(value: string) {
+  try {
+    if (typeof atob === 'function') {
+      return atob(value);
+    }
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(value, 'base64').toString('utf-8');
+    }
+  } catch (error) {
+    debugAuth('cookie', 'Base64 decode failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+  return null;
+}
+
 function getSupabaseCookieName(url: string | undefined) {
   if (!url) return null;
   try {
     const host = new URL(url).hostname;
     const projectRef = host.split('.')[0];
-    if (!projectRef) return null;
-    return `sb-${projectRef}-auth-token`;
+    return projectRef ? `sb-${projectRef}-auth-token` : null;
   } catch (error) {
     debugAuth('cookie', 'Failed to derive cookie name', {
       error: error instanceof Error ? error.message : String(error),
@@ -52,81 +69,28 @@ function getSupabaseCookieName(url: string | undefined) {
   }
 }
 
-function readSupabaseCookie(request: NextRequest, baseName: string) {
-  const base = request.cookies.get(baseName)?.value;
-  if (base) {
-    return { value: base, chunks: 0 };
-  }
-  const pieces: string[] = [];
-  for (let index = 0; index < 24; index += 1) {
-    const part = request.cookies.get(`${baseName}.${index}`)?.value;
-    if (!part) break;
-    pieces.push(part);
-  }
-  if (pieces.length === 0) {
-    return { value: null, chunks: 0 };
-  }
-  return { value: pieces.join(''), chunks: pieces.length };
-}
+type StoredSession = {
+  access_token: string;
+  refresh_token: string | null;
+  provider_token?: string | null;
+  provider_refresh_token?: string | null;
+} | null;
 
-function clearSupabaseCookie(response: NextResponse, baseName: string, previousChunkCount: number) {
-  response.cookies.set({ name: baseName, value: '', path: '/', maxAge: 0 });
-  const limit = Math.max(previousChunkCount, 4);
-  for (let index = 0; index < limit; index += 1) {
-    response.cookies.set({ name: `${baseName}.${index}`, value: '', path: '/', maxAge: 0 });
-  }
-}
-
-function writeSupabaseCookie(
-  response: NextResponse,
-  baseName: string,
-  rawValue: string,
-  previousChunkCount: number,
-) {
-  if (!rawValue) {
-    clearSupabaseCookie(response, baseName, previousChunkCount);
-    return;
-  }
-  const cookieOptions = {
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: true,
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-  };
-  if (rawValue.length <= COOKIE_CHUNK_SIZE) {
-    response.cookies.set({ name: baseName, value: rawValue, ...cookieOptions });
-    clearSupabaseCookie(response, baseName, previousChunkCount);
-    return;
-  }
-  clearSupabaseCookie(response, baseName, previousChunkCount);
-  const matcher = new RegExp(`.{1,${COOKIE_CHUNK_SIZE}}`, 'g');
-  const chunks = rawValue.match(matcher) ?? [];
-  chunks.forEach((chunk, index) => {
-    response.cookies.set({ name: `${baseName}.${index}`, value: chunk, ...cookieOptions });
-  });
-}
-
-type StoredSession =
-  | {
-      access_token: string;
-      refresh_token: string | null;
-      provider_token?: string | null;
-      provider_refresh_token?: string | null;
-    }
-  | null;
-
-function parseStoredSession(raw: string | null) {
+function parseStoredSession(raw: string | null): StoredSession {
   if (!raw) return null;
+
+  const maybeDecoded = decodeBase64(raw);
+  const text = maybeDecoded ?? raw;
+
   try {
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed = JSON.parse(text) as unknown;
     if (Array.isArray(parsed)) {
       return {
         access_token: typeof parsed[0] === 'string' ? parsed[0] : '',
         refresh_token: typeof parsed[1] === 'string' ? parsed[1] : null,
         provider_token: typeof parsed[2] === 'string' ? parsed[2] : null,
         provider_refresh_token: typeof parsed[3] === 'string' ? parsed[3] : null,
-      } satisfies StoredSession;
+      };
     }
     if (parsed && typeof parsed === 'object' && 'access_token' in parsed) {
       const record = parsed as Record<string, unknown>;
@@ -136,22 +100,79 @@ function parseStoredSession(raw: string | null) {
         provider_token: typeof record.provider_token === 'string' ? record.provider_token : null,
         provider_refresh_token:
           typeof record.provider_refresh_token === 'string' ? record.provider_refresh_token : null,
-      } satisfies StoredSession;
+      };
     }
   } catch (error) {
-    debugAuth('cookie', 'Failed to parse stored session', {
+    debugAuth('cookie', 'Supabase cookie parse failed', {
       error: error instanceof Error ? error.message : String(error),
     });
   }
   return null;
 }
 
+function readSupabaseCookie(request: NextRequest, baseName: string) {
+  const base = request.cookies.get(baseName)?.value;
+  if (base) {
+    return { value: base, chunks: 0 };
+  }
+
+  const parts: string[] = [];
+  for (let index = 0; index < 24; index += 1) {
+    const chunk = request.cookies.get(`${baseName}.${index}`)?.value;
+    if (!chunk) break;
+    parts.push(chunk);
+  }
+
+  if (parts.length === 0) {
+    return { value: null, chunks: 0 };
+  }
+
+  return { value: parts.join(''), chunks: parts.length };
+}
+
+function clearSupabaseCookie(response: NextResponse, baseName: string, previousChunks: number) {
+  response.cookies.set({ name: baseName, value: '', path: '/', maxAge: 0 });
+  const limit = Math.max(previousChunks, 4);
+  for (let index = 0; index < limit; index += 1) {
+    response.cookies.set({ name: `${baseName}.${index}`, value: '', path: '/', maxAge: 0 });
+  }
+}
+
+function writeSupabaseCookie(
+  response: NextResponse,
+  baseName: string,
+  rawValue: string,
+  previousChunks: number,
+) {
+  if (!rawValue) {
+    clearSupabaseCookie(response, baseName, previousChunks);
+    return;
+  }
+
+  const options = {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: true,
+    maxAge: COOKIE_MAX_AGE_SECONDS,
+  };
+
+  if (rawValue.length <= COOKIE_CHUNK_SIZE) {
+    response.cookies.set({ name: baseName, value: rawValue, ...options });
+    clearSupabaseCookie(response, baseName, previousChunks);
+    return;
+  }
+
+  clearSupabaseCookie(response, baseName, previousChunks);
+  const regex = new RegExp(`.{1,${COOKIE_CHUNK_SIZE}}`, 'g');
+  const chunks = rawValue.match(regex) ?? [];
+  chunks.forEach((chunk, index) => {
+    response.cookies.set({ name: `${baseName}.${index}`, value: chunk, ...options });
+  });
+}
+
 interface SupabaseUserResponse {
-  user: {
-    id: string;
-    email?: string | null;
-    user_metadata?: Record<string, unknown>;
-  } | null;
+  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null;
   status: number;
 }
 
@@ -176,7 +197,7 @@ async function fetchSupabaseUser(
     const user = (await response.json()) as SupabaseUserResponse['user'];
     return { status: response.status, user };
   } catch (error) {
-    debugAuth('supabase', 'User lookup failed', {
+    debugAuth('supabase', 'User fetch failed', {
       error: error instanceof Error ? error.message : String(error),
     });
     return { status: 500, user: null };
@@ -188,9 +209,6 @@ interface SupabaseTokenResponse {
   refresh_token: string | null;
   provider_token?: string | null;
   provider_refresh_token?: string | null;
-  expires_in?: number;
-  expires_at?: number;
-  token_type?: string;
   user?: SupabaseUserResponse['user'];
 }
 
@@ -225,7 +243,7 @@ async function refreshSupabaseSession(
   }
 }
 
-interface ResolvedSupabaseSession {
+interface ResolvedSession {
   access_token: string;
   refresh_token: string | null;
   user: NonNullable<SupabaseUserResponse['user']>;
@@ -236,17 +254,13 @@ async function resolveSupabaseSession(
   response: NextResponse,
   supabaseUrl: string,
   supabaseAnonKey: string,
-): Promise<ResolvedSupabaseSession | null> {
+): Promise<ResolvedSession | null> {
   const cookieName = getSupabaseCookieName(supabaseUrl);
-  if (!cookieName) {
-    debugAuth('cookie', 'Missing cookie name');
-    return null;
-  }
+  if (!cookieName) return null;
 
   const storedCookie = readSupabaseCookie(request, cookieName);
   const storedSession = parseStoredSession(storedCookie.value);
   if (!storedSession || !storedSession.access_token) {
-    debugAuth('cookie', 'No stored session in cookies', { chunks: storedCookie.chunks });
     return null;
   }
 
@@ -259,13 +273,14 @@ async function resolveSupabaseSession(
       return null;
     }
 
-    const sessionString = JSON.stringify([
+    const serialized = JSON.stringify([
       refreshed.access_token,
       refreshed.refresh_token ?? storedSession.refresh_token,
       refreshed.provider_token ?? storedSession.provider_token ?? null,
       refreshed.provider_refresh_token ?? storedSession.provider_refresh_token ?? null,
     ]);
-    writeSupabaseCookie(response, cookieName, sessionString, storedCookie.chunks);
+
+    writeSupabaseCookie(response, cookieName, serialized, storedCookie.chunks);
 
     userResponse = {
       status: 200,
@@ -276,9 +291,7 @@ async function resolveSupabaseSession(
   }
 
   if (userResponse.status !== 200 || !userResponse.user) {
-    debugAuth('supabase', 'User fetch returned non-200', {
-      status: userResponse.status,
-    });
+    debugAuth('supabase', 'User lookup returned non-200', { status: userResponse.status });
     return null;
   }
 
@@ -287,10 +300,6 @@ async function resolveSupabaseSession(
     refresh_token: storedSession.refresh_token,
     user: userResponse.user,
   };
-}
-
-function hasInviteAccess(metadata: Record<string, unknown> | null | undefined) {
-  return sessionHasInviteAccess(metadata ?? {});
 }
 
 export async function middleware(request: NextRequest) {
@@ -303,7 +312,6 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/api') ||
       pathname.startsWith('/d/') ||
       pathname.startsWith('/auth') ||
-      pathname === '/' ||
       pathname.startsWith('/manifest') ||
       pathname.startsWith('/icons') ||
       pathname.startsWith('/offline')
@@ -321,7 +329,7 @@ export async function middleware(request: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      debugAuth('config', 'Missing Supabase env');
+      debugAuth('config', 'Missing Supabase env vars');
       return NextResponse.redirect(new URL('/login?reason=missing_supabase', request.url));
     }
 
@@ -357,11 +365,11 @@ export async function middleware(request: NextRequest) {
 
     const requireInvite = shouldRequireInviteCode();
     const isInvitePage = pathname.startsWith('/invite-code');
-    const metadataInvite = hasInviteAccess(user.user_metadata);
+    const metadataInvite = metadataHasInvite(user.user_metadata);
 
     if (requireInvite && role === 'buyer' && !metadataInvite && !isInvitePage) {
       const inviteUrl = new URL('/invite-code', request.url);
-      inviteUrl.searchParams.set('next', pathname + request.nextUrl.search);
+      inviteUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
       const redirectResponse = NextResponse.redirect(inviteUrl);
       mergeCookies(response, redirectResponse);
       return redirectResponse;
@@ -375,7 +383,6 @@ export async function middleware(request: NextRequest) {
       return redirectResponse;
     }
 
-    mergeCookies(response, response);
     return response;
   } catch (error) {
     console.error('[middleware] Unhandled failure', error instanceof Error ? { message: error.message, stack: error.stack } : error);

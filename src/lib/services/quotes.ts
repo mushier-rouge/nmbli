@@ -1,15 +1,17 @@
 import { randomUUID } from 'crypto';
 
 import {
+  BriefStatus,
+  DealerInviteState,
+  FileOwnerType,
+  QuoteLineKind,
+  QuoteSource,
+  QuoteStatus,
+} from '@/generated/prisma';
+import type {
   Prisma,
-  DealerInviteState as DealerInviteStateEnum,
-  QuoteLineKind as QuoteLineKindEnum,
-  QuoteSource as QuoteSourceEnum,
-  QuoteStatus as QuoteStatusEnum,
-  BriefStatus as BriefStatusEnum,
-  FileOwnerType as FileOwnerTypeEnum,
-  TimelineActor as TimelineActorEnum,
-  TimelineEventType as TimelineEventTypeEnum,
+  TimelineActor as TimelineActorType,
+  TimelineEventType as TimelineEventTypeType,
 } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { toDecimal, toNullableDecimal } from '@/lib/utils/prisma-helpers';
@@ -66,27 +68,29 @@ export async function submitDealerQuote(params: {
 }) {
   const { inviteId, dealerId, briefId, input, files } = params;
 
-  const incentivesTotal = input.incentives?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
-  const addonsTotal = input.addons?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
-  const otherFeesTotal = input.otherFees?.reduce((sum, item) => sum + item.amount, 0) ?? 0;
+  const incentivesTotal = input.incentives?.reduce((sum, incentive) => sum + incentive.amount, 0) ?? 0;
+  const addonsTotal = input.addons?.reduce((sum, addon) => sum + addon.amount, 0) ?? 0;
+  const otherFeesTotal = input.otherFees?.reduce((sum, fee) => sum + fee.amount, 0) ?? 0;
 
   const shadinessScore = calculateShadinessScore(input);
 
-  const quote = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const previousQuote = await tx.quote.findFirst({
       where: {
         inviteId,
-        status: { in: [QuoteStatusEnum.published, QuoteStatusEnum.accepted] },
+        status: {
+          in: [QuoteStatus.published, QuoteStatus.accepted],
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const created = await tx.quote.create({
+    const quote = await tx.quote.create({
       data: {
         briefId,
         dealerId,
         inviteId,
-        status: QuoteStatusEnum.published,
+        status: QuoteStatus.published,
         vin: input.vin,
         stockNumber: input.stockNumber,
         year: input.year,
@@ -123,116 +127,140 @@ export async function submitDealerQuote(params: {
       },
     });
 
-    const lineData: Prisma.QuoteLineCreateManyInput[] = [];
+    const lineCreates: Prisma.QuoteLineCreateManyInput[] = [];
 
     for (const incentive of input.incentives ?? []) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.incentive,
+        quoteId: quote.id,
+        kind: QuoteLineKind.incentive,
         name: incentive.name,
         amount: toDecimal(incentive.amount),
       });
     }
 
     for (const fee of input.otherFees ?? []) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.fee,
+        quoteId: quote.id,
+        kind: QuoteLineKind.fee,
         name: fee.name,
         amount: toDecimal(fee.amount),
       });
     }
 
     if (input.docFee && input.docFee > 0) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.fee,
+        quoteId: quote.id,
+        kind: QuoteLineKind.fee,
         name: 'Doc Fee',
         amount: toDecimal(input.docFee),
       });
     }
 
     if (input.dmvFee && input.dmvFee > 0) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.fee,
+        quoteId: quote.id,
+        kind: QuoteLineKind.fee,
         name: 'DMV / Registration',
         amount: toDecimal(input.dmvFee),
       });
     }
 
     if (input.tireBatteryFee && input.tireBatteryFee > 0) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.fee,
+        quoteId: quote.id,
+        kind: QuoteLineKind.fee,
         name: 'Tire & Battery',
         amount: toDecimal(input.tireBatteryFee),
       });
     }
 
     for (const addon of input.addons ?? []) {
-      lineData.push({
+      lineCreates.push({
         id: randomUUID(),
-        quoteId: created.id,
-        kind: QuoteLineKindEnum.addon,
+        quoteId: quote.id,
+        kind: QuoteLineKind.addon,
         name: addon.name,
         amount: toDecimal(addon.amount),
         approvedByBuyer: addon.isOptional,
       });
     }
 
-    if (lineData.length > 0) {
-      await tx.quoteLine.createMany({ data: lineData });
+    if (lineCreates.length > 0) {
+      await tx.quoteLine.createMany({ data: lineCreates });
+    }
+
+    if (files.length > 0) {
+      for (const file of files) {
+        const upload = await uploadFileToStorage({
+          file,
+          pathPrefix: `quotes/${quote.id}`,
+        });
+
+        await tx.fileAsset.create({
+          data: {
+            ownerType: FileOwnerType.quote,
+            ownerId: quote.id,
+            url: upload.url,
+            mimeType: upload.mimeType,
+            originalName: upload.originalName,
+            size: upload.size,
+            quoteId: quote.id,
+          },
+        });
+      }
     }
 
     if (previousQuote) {
       await tx.quote.update({
         where: { id: previousQuote.id },
-        data: { status: QuoteStatusEnum.superseded },
+        data: { status: QuoteStatus.superseded },
       });
       await tx.dealerInvite.update({
         where: { id: inviteId },
-        data: { state: DealerInviteStateEnum.revised },
+        data: { state: DealerInviteState.revised },
       });
     } else {
       await tx.dealerInvite.update({
         where: { id: inviteId },
-        data: { state: DealerInviteStateEnum.submitted },
+        data: { state: DealerInviteState.submitted },
       });
     }
 
-    return created;
+    return quote;
   });
 
+  const uploads: { url: string; mimeType: string; originalName: string; size: number }[] = [];
+
   if (files.length > 0) {
-    const uploads = await Promise.all(
-      files.map((file) => uploadFileToStorage({ file, pathPrefix: `quotes/${quote.id}` }))
-    );
+    for (const file of files) {
+      const upload = await uploadFileToStorage({ file, pathPrefix: `quotes/${result.id}` });
+      uploads.push(upload);
+    }
 
     await prisma.fileAsset.createMany({
       data: uploads.map((upload) => ({
         id: randomUUID(),
-        ownerType: FileOwnerTypeEnum.quote,
-        ownerId: quote.id,
+        ownerType: FileOwnerType.quote,
+        ownerId: result.id,
         url: upload.url,
         mimeType: upload.mimeType,
         originalName: upload.originalName,
         size: upload.size,
-        quoteId: quote.id,
+        quoteId: result.id,
       })),
     });
   }
 
   await recordTimelineEvent({
     briefId,
-    quoteId: quote.id,
-    type: TimelineEventTypeEnum.quote_submitted,
-    actor: TimelineActorEnum.dealer,
+    quoteId: result.id,
+    type: 'quote_submitted' as TimelineEventTypeType,
+    actor: 'dealer' as TimelineActorType,
     payload: {
       dealerId,
       inviteId,
@@ -240,20 +268,29 @@ export async function submitDealerQuote(params: {
     },
   });
 
-  return quote;
+  return result;
 }
 
-export async function sendCounter(params: { quoteId: string; actor: 'buyer' | 'ops'; request: CounterRequest }) {
+export async function sendCounter(params: {
+  quoteId: string;
+  actor: 'buyer' | 'ops';
+  request: CounterRequest;
+}) {
   const { quoteId, actor, request } = params;
 
   const quote = await prisma.quote.findUnique({
     where: { id: quoteId },
     include: {
-      invite: true,
       dealer: true,
-      brief: true,
+      brief: {
+        include: {
+          buyer: true,
+        },
+      },
+      invite: true,
     },
   });
+
   if (!quote) {
     throw new Error('Quote not found');
   }
@@ -261,8 +298,8 @@ export async function sendCounter(params: { quoteId: string; actor: 'buyer' | 'o
   await recordTimelineEvent({
     briefId: quote.briefId,
     quoteId: quote.id,
-    type: TimelineEventTypeEnum.counter_sent,
-    actor: actor === 'ops' ? TimelineActorEnum.ops : TimelineActorEnum.buyer,
+    type: 'counter_sent' as TimelineEventTypeType,
+    actor: (actor === 'ops' ? 'ops' : 'buyer') as TimelineActorType,
     payload: request,
   });
 
@@ -287,40 +324,40 @@ export async function acceptQuote(params: { quoteId: string; buyerId: string }) 
     throw new Error('Cannot accept quote for another buyer');
   }
 
-  if (quote.status === QuoteStatusEnum.accepted) {
+  if (quote.status === QuoteStatus.accepted) {
     return quote;
   }
 
-  const accepted = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.quote.updateMany({
-      where: { briefId: quote.briefId, status: QuoteStatusEnum.accepted },
-      data: { status: QuoteStatusEnum.rejected },
+      where: { briefId: quote.briefId, status: QuoteStatus.accepted },
+      data: { status: QuoteStatus.rejected },
     });
 
-    const updated = await tx.quote.update({
+    const accepted = await tx.quote.update({
       where: { id: quoteId },
-      data: { status: QuoteStatusEnum.accepted },
+      data: { status: QuoteStatus.accepted },
     });
 
     await tx.brief.update({
       where: { id: quote.briefId },
-      data: { status: BriefStatusEnum.contract },
+      data: { status: BriefStatus.contract },
     });
 
-    return updated;
+    return accepted;
   });
 
   await recordTimelineEvent({
-    briefId: accepted.briefId,
-    quoteId: accepted.id,
-    type: TimelineEventTypeEnum.quote_accepted,
-    actor: TimelineActorEnum.buyer,
+    briefId: quote.briefId,
+    quoteId: quote.id,
+    type: 'quote_accepted' as TimelineEventTypeType,
+    actor: 'buyer' as TimelineActorType,
     payload: {
-      otdTotal: accepted.otdTotal?.toString(),
+      otdTotal: quote.otdTotal?.toString(),
     },
   });
 
-  return accepted;
+  return result;
 }
 
 export async function ingestEmailQuote(params: {
@@ -332,10 +369,9 @@ export async function ingestEmailQuote(params: {
 }) {
   const { briefId, dealerEmail, subject, body, attachments } = params;
 
-  const existingDealer = await prisma.dealer.findFirst({ where: { contactEmail: dealerEmail } });
-  const dealer =
-    existingDealer ??
-    (await prisma.dealer.create({
+  let dealer = await prisma.dealer.findFirst({ where: { contactEmail: dealerEmail } });
+  if (!dealer) {
+    dealer = await prisma.dealer.create({
       data: {
         name: dealerEmail.split('@')[0] ?? 'Dealer',
         city: 'Unknown',
@@ -344,15 +380,18 @@ export async function ingestEmailQuote(params: {
         contactEmail: dealerEmail,
         phone: 'N/A',
       },
-    }));
+    });
+  }
 
   const quote = await prisma.quote.create({
     data: {
       briefId,
       dealerId: dealer.id,
-      status: QuoteStatusEnum.draft,
-      source: QuoteSourceEnum.email_parsed,
-      evidenceNote: `${subject}\n\n${body}`.slice(0, 1000),
+      status: QuoteStatus.draft,
+      source: QuoteSource.email_parsed,
+      evidenceNote: `${subject}
+
+${body}`.slice(0, 1000),
       confidence: toDecimal(0.3),
     },
   });
@@ -369,7 +408,7 @@ export async function ingestEmailQuote(params: {
         });
         await prisma.fileAsset.create({
           data: {
-            ownerType: FileOwnerTypeEnum.quote,
+            ownerType: FileOwnerType.quote,
             ownerId: quote.id,
             url: upload.url,
             mimeType: upload.mimeType,
@@ -385,8 +424,8 @@ export async function ingestEmailQuote(params: {
   await recordTimelineEvent({
     briefId,
     quoteId: quote.id,
-    type: TimelineEventTypeEnum.quote_submitted,
-    actor: TimelineActorEnum.ops,
+    type: 'quote_submitted' as TimelineEventTypeType,
+    actor: 'ops' as TimelineActorType,
     payload: { source: 'email_ingest', dealerEmail },
   });
 
@@ -395,19 +434,18 @@ export async function ingestEmailQuote(params: {
 
 export async function publishDraftQuote(params: { quoteId: string; confidence?: number; note?: string }) {
   const { quoteId, confidence, note } = params;
-
   const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
   if (!quote) {
     throw new Error('Quote not found');
   }
-  if (quote.status !== QuoteStatusEnum.draft) {
+  if (quote.status !== QuoteStatus.draft) {
     return quote;
   }
 
   const updated = await prisma.quote.update({
     where: { id: quoteId },
     data: {
-      status: QuoteStatusEnum.published,
+      status: QuoteStatus.published,
       confidence: confidence !== undefined ? toDecimal(confidence) : quote.confidence,
       evidenceNote: note ?? quote.evidenceNote,
     },
@@ -416,8 +454,8 @@ export async function publishDraftQuote(params: { quoteId: string; confidence?: 
   await recordTimelineEvent({
     briefId: updated.briefId,
     quoteId: updated.id,
-    type: TimelineEventTypeEnum.quote_published,
-    actor: TimelineActorEnum.ops,
+    type: 'quote_published' as TimelineEventTypeType,
+    actor: 'ops' as TimelineActorType,
     payload: { confidence },
   });
 

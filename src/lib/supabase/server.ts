@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export async function getSupabaseServerClient(): Promise<SupabaseClient> {
+  const cookieStore = await cookies();
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -12,41 +14,14 @@ export async function getSupabaseServerClient(): Promise<SupabaseClient> {
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      getAll: async () => {
-        try {
-          const store = await cookies();
-          return store.getAll().map(({ name, value }) => ({ name, value }));
-        } catch (error) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn('[supabase] Unable to read cookies', error);
-          }
-          return [];
-        }
+      get(name: string) {
+        return cookieStore.get(name)?.value;
       },
-      setAll: async (cookieList) => {
-        try {
-          const store = await cookies();
-          for (const cookie of cookieList) {
-            try {
-              store.set({
-                name: cookie.name,
-                value: cookie.value,
-                ...cookie.options,
-              });
-            } catch (innerError) {
-              if (process.env.NODE_ENV !== 'production') {
-                console.warn('[supabase] Skipping individual cookie set', {
-                  cookie,
-                  error: innerError,
-                });
-              }
-            }
-          }
-        } catch (error) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.warn('[supabase] Unable to write cookies', error);
-          }
-        }
+      set(name: string, value: string, options: CookieOptions) {
+        cookieStore.set({ name, value, ...options });
+      },
+      remove(name: string, options: CookieOptions) {
+        cookieStore.set({ name, value: '', ...options });
       },
     },
   });

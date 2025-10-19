@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -28,8 +28,8 @@ const formSchema = z.object({
   zip: z
     .string()
     .regex(/^\d{5}$/g, 'Enter a 5-digit ZIP code'),
-  driveHours: z.coerce.number().min(0.5, 'Minimum 0.5 hours').max(8, 'Keep it under 8 hours'),
-  limit: z.coerce.number().min(1).max(12).default(8),
+  driveHours: z.number().min(0.5, 'Minimum 0.5 hours').max(8, 'Keep it under 8 hours'),
+  limit: z.number().min(1).max(12),
   additionalContext: z.string().max(500).optional(),
 });
 
@@ -96,7 +96,7 @@ export function DealerProspectsPanel({ briefId, defaultZip, defaultBrands, prosp
   const [busyProspectId, setBusyProspectId] = useState<string | null>(null);
 
   const form = useForm<DealerProspectFormValues>({
-    resolver: zodResolver(formSchema) as Resolver<DealerProspectFormValues>,
+    resolver: zodResolver(formSchema),
     defaultValues: {
       brands: defaultBrands.join(', '),
       zip: defaultZip,
@@ -198,7 +198,17 @@ export function DealerProspectsPanel({ briefId, defaultZip, defaultBrands, prosp
                   <FormItem>
                     <FormLabel>Drive time (hours)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.5" min={0.5} max={8} {...field} />
+                      <Input
+                        type="number"
+                        step="0.5"
+                        min={0.5}
+                        max={8}
+                        value={field.value ?? ''}
+                        onChange={(event) => {
+                          const numericValue = event.target.valueAsNumber;
+                          field.onChange(Number.isNaN(numericValue) ? undefined : numericValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,7 +221,16 @@ export function DealerProspectsPanel({ briefId, defaultZip, defaultBrands, prosp
                   <FormItem>
                     <FormLabel>How many suggestions</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} max={12} {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={field.value ?? ''}
+                        onChange={(event) => {
+                          const numericValue = event.target.valueAsNumber;
+                          field.onChange(Number.isNaN(numericValue) ? undefined : numericValue);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

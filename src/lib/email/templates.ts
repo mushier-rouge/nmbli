@@ -17,13 +17,13 @@ interface DealerInviteTemplateInput {
 }
 
 export function dealerInviteSubject() {
-  return `Nmbli | Quote request for your buyer`;
+  return `OutTheDoor | Quote request for your buyer`;
 }
 
 export function dealerInviteContent({ dealerName, brief, link, expiresAt }: DealerInviteTemplateInput) {
-  const text = `Hi ${dealerName},\n\nWe\'re sourcing an itemized out-the-door quote for a buyer in ${brief.zipcode}.\nThey are shopping for ${brief.makes.join(', ')} ${brief.models.join(', ')} with a max budget of ${brief.maxOTD}.\n\nPlease submit your detailed quote (including doc fees, DMV, add-ons, incentives) using this secure link:\n${link}\n\nThe link expires ${expiresAt.toLocaleString()}.\n\nThank you,\nNmbli Ops`;
+  const text = `Hi ${dealerName},\n\nWe\'re sourcing an itemized out-the-door quote for a buyer in ${brief.zipcode}.\nThey are shopping for ${brief.makes.join(', ')} ${brief.models.join(', ')} with a max budget of ${brief.maxOTD}.\n\nPlease submit your detailed quote (including doc fees, DMV, add-ons, incentives) using this secure link:\n${link}\n\nThe link expires ${expiresAt.toLocaleString()}.\n\nThank you,\nOutTheDoor Ops`;
 
-  const html = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>We\'re sourcing a transparent, itemized out-the-door quote for a buyer in <strong>${brief.zipcode}</strong>.</p><p>The buyer is interested in <strong>${brief.makes.join(', ')} ${brief.models.join(', ')}</strong> with a max budget of <strong>${brief.maxOTD}</strong>.</p><p>Use the secure link below to submit your quote with line items for doc fees, DMV, add-ons, and incentives.</p><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit your quote</a></p><p>This link expires on ${expiresAt.toLocaleString()}.</p><p>Thanks,<br/>Nmbli Ops</p></body></html>`;
+  const html = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>We\'re sourcing a transparent, itemized out-the-door quote for a buyer in <strong>${brief.zipcode}</strong>.</p><p>The buyer is interested in <strong>${brief.makes.join(', ')} ${brief.models.join(', ')}</strong> with a max budget of <strong>${brief.maxOTD}</strong>.</p><p>Use the secure link below to submit your quote with line items for doc fees, DMV, add-ons, and incentives.</p><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit your quote</a></p><p>This link expires on ${expiresAt.toLocaleString()}.</p><p>Thanks,<br/>OutTheDoor Ops</p></body></html>`;
 
   return { text, html };
 }
@@ -36,7 +36,7 @@ interface CounterEmailInput {
 }
 
 export function counterEmailSubject(counter: CounterRequest) {
-  return counter.type === 'remove_addons' ? 'Nmbli | Remove add-ons requested' : 'Nmbli | Match target OTD requested';
+  return counter.type === 'remove_addons' ? 'OutTheDoor | Remove add-ons requested' : 'OutTheDoor | Match target OTD requested';
 }
 
 export function counterEmailContent({ dealerName, quoteSummary, counter, link }: CounterEmailInput) {
@@ -60,9 +60,9 @@ export function counterEmailContent({ dealerName, quoteSummary, counter, link }:
     })}</strong> with no add-ons.</p>`;
   }
 
-  const ctaText = `${intro}\n\n${bodyText}\n\nPlease revise your quote using this link: ${link}\n\nThank you,\nNmbli Ops`;
+  const ctaText = `${intro}\n\n${bodyText}\n\nPlease revise your quote using this link: ${link}\n\nThank you,\nOutTheDoor Ops`;
 
-  const ctaHtml = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>Thanks for your quote: ${quoteSummary}.</p>${bodyHtml}<p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit revised quote</a></p><p>Thank you,<br/>Nmbli Ops</p></body></html>`;
+  const ctaHtml = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>Thanks for your quote: ${quoteSummary}.</p>${bodyHtml}<p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit revised quote</a></p><p>Thank you,<br/>OutTheDoor Ops</p></body></html>`;
 
   return { text: ctaText, html: ctaHtml };
 }
@@ -75,17 +75,17 @@ interface ContractMismatchEmailInput {
 }
 
 export function contractMismatchSubject() {
-  return 'Nmbli | Contract needs updates before signing';
+  return 'OutTheDoor | Contract needs updates before signing';
 }
 
 export function contractMismatchContent({ dealerName, quoteSummary, diffResults, link }: ContractMismatchEmailInput) {
   const text = `Hi ${dealerName},\n\nWe compared your contract against the accepted quote (${quoteSummary}) and found mismatches:\n${diffResults
     .map((result) => `- ${result.field}${result.notes ? `: ${result.notes}` : ''}`)
-    .join('\n')}\n\nPlease correct these items and upload a revised contract: ${link}\n\nThanks,\nNmbli Ops`;
+    .join('\n')}\n\nPlease correct these items and upload a revised contract: ${link}\n\nThanks,\nOutTheDoor Ops`;
 
   const html = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>We compared your contract against the accepted quote (<strong>${quoteSummary}</strong>) and found the following mismatches:</p><ul>${diffResults
     .map((result) => `<li><strong>${result.field}</strong>${result.notes ? ` – ${result.notes}` : ''}</li>`)
-    .join('')}</ul><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Upload revised contract</a></p><p>Thanks,<br/>Nmbli Ops</p></body></html>`;
+    .join('')}</ul><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Upload revised contract</a></p><p>Thanks,<br/>OutTheDoor Ops</p></body></html>`;
 
   return { text, html };
 }

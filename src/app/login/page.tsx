@@ -1,7 +1,9 @@
-import Link from 'next/link';
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 import { LoginForm } from '@/components/auth/login-form';
+
+export const dynamic = 'force-dynamic';
 
 export default function LoginPage() {
   return (

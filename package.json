@@ -1,5 +1,5 @@
 {
-  "name": "nmbli",
+  "name": "outthedoor",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,16 +15,12 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "analyze": "next build --analyze",
-    "gmail:send": "ts-node scripts/gmail-cli.ts send",
-    "gmail:threads": "ts-node scripts/gmail-cli.ts threads",
-    "postinstall": "prisma generate"
+    "analyze": "next build --analyze"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
-    "@google-cloud/local-auth": "^3.0.1",
-    "@google/genai": "^1.25.0",
     "@hookform/resolvers": "^5.2.2",
+    "@google/genai": "^1.25.0",
     "@prisma/client": "^6.17.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -54,7 +50,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "form-data": "^4.0.4",
-    "googleapis": "^164.0.0",
     "ioredis": "^5.8.1",
     "lucide-react": "^0.545.0",
     "next": "15.5.4",
@@ -70,6 +65,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@google-cloud/local-auth": "^3.0.1",
     "@playwright/test": "^1.56.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
@@ -82,6 +78,7 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "@vitest/ui": "^3.2.4",
+    "googleapis": "^164.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "eslint-plugin-jest-dom": "^5.5.0",

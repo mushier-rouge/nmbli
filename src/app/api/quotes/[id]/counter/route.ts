@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const quote = await sendCounter({
       quoteId: id,
-      actor: session.role as 'buyer' | 'ops',
+      actor: session.role === 'ops' ? 'ops' : 'buyer',
       request: counter,
     });
 

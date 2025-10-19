@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { PrismaClient, Prisma } from '../generated/prisma';
 
 export const TimelineEventType = {
@@ -27,16 +25,18 @@ export const TimelineActor = {
   system: 'system',
 } as const;
 
-const prismaNamespace = Prisma as unknown as {
+type PrismaEnumRegistry = typeof Prisma & {
   TimelineEventType?: typeof TimelineEventType;
   TimelineActor?: typeof TimelineActor;
 };
 
-if (!prismaNamespace.TimelineEventType) {
-  prismaNamespace.TimelineEventType = TimelineEventType;
+const prismaEnumRegistry = Prisma as PrismaEnumRegistry;
+
+if (!prismaEnumRegistry.TimelineEventType) {
+  prismaEnumRegistry.TimelineEventType = TimelineEventType;
 }
-if (!prismaNamespace.TimelineActor) {
-  prismaNamespace.TimelineActor = TimelineActor;
+if (!prismaEnumRegistry.TimelineActor) {
+  prismaEnumRegistry.TimelineActor = TimelineActor;
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };

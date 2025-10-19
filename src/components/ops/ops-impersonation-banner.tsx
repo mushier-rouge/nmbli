@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { getSessionContext } from '@/lib/auth/session';
 
 import { OpsImpersonationToggle } from './ops-impersonation-toggle';
@@ -13,6 +12,7 @@ export async function OpsImpersonationBanner() {
     return null;
   }
 
+  const { prisma } = await import('@/lib/prisma');
   const dealers = await prisma.dealer.findMany({
     orderBy: { name: 'asc' },
     select: {

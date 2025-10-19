@@ -12,7 +12,8 @@ import { getBriefDetail } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { canAccessBrief } from '@/lib/auth/roles';
 import { formatCurrency, formatPercent } from '@/lib/utils/number';
-import { DealerProspectsPanel } from '@/components/brief/dealer-prospects-panel';
+
+export const dynamic = 'force-dynamic';
 
 type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
 
@@ -77,25 +78,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
   const acceptedQuoteId = brief.quotes.find((quote) => quote.status === 'accepted')?.id;
 
   const timelineEvents = brief.timelineEvents.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  const dealerProspects = brief.dealerProspects.map((prospect) => ({
-    id: prospect.id,
-    name: prospect.name,
-    brand: prospect.brand,
-    city: prospect.city,
-    state: prospect.state,
-    zipcode: prospect.zipcode,
-    address: prospect.address,
-    phone: prospect.phone,
-    email: prospect.email,
-    website: prospect.website,
-    source: prospect.source,
-    notes: prospect.notes,
-    driveHours: prospect.driveHours ?? null,
-    distanceMiles: prospect.distanceMiles ?? null,
-    status: prospect.status,
-    createdAt: prospect.createdAt.toISOString(),
-    lastContactedAt: prospect.lastContactedAt ? prospect.lastContactedAt.toISOString() : null,
-  }));
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-10">
@@ -149,19 +131,10 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
 
       <Tabs defaultValue="offers" className="w-full">
         <TabsList>
-          <TabsTrigger value="dealers">Dealers</TabsTrigger>
           <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="counters">Counters</TabsTrigger>
           <TabsTrigger value="contract">Contract</TabsTrigger>
         </TabsList>
-        <TabsContent value="dealers" className="pt-6">
-          <DealerProspectsPanel
-            briefId={brief.id}
-            defaultZip={brief.zipcode}
-            defaultBrands={brief.makes}
-            prospects={dealerProspects}
-          />
-        </TabsContent>
         <TabsContent value="offers" className="space-y-6 pt-6">
           <div className="grid gap-4 lg:grid-cols-2">
             {sortedQuotes.map((quote) => {

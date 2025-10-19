@@ -1,8 +1,10 @@
 import { createBriefSchema, type CreateBriefInput } from '@/lib/validation/brief';
 import { counterRequestSchema, type CounterRequest } from '@/lib/validation/quote';
-import type {
-  DealerProspectSearchInput,
-  DealerProspectStatusInput,
+import {
+  dealerProspectSearchSchema,
+  dealerProspectStatusSchema,
+  type DealerProspectSearchInput,
+  type DealerProspectStatusInput,
 } from '@/lib/validation/dealer-prospect';
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -53,6 +55,7 @@ export async function apiAcceptQuote(quoteId: string) {
 }
 
 export async function apiDiscoverDealerProspects(briefId: string, payload: DealerProspectSearchInput) {
+  dealerProspectSearchSchema.parse(payload);
   const response = await fetch(`/api/briefs/${briefId}/dealer-prospects`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -66,6 +69,7 @@ export async function apiUpdateDealerProspectStatus(
   prospectId: string,
   payload: DealerProspectStatusInput,
 ) {
+  dealerProspectStatusSchema.parse(payload);
   const response = await fetch(`/api/briefs/${briefId}/dealer-prospects/${prospectId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

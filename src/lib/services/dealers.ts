@@ -1,16 +1,14 @@
 import { randomUUID } from 'crypto';
 
-import type { DealerInvite, DealerInviteState } from '@/generated/prisma';
-import {
-  DealerInviteState as DealerInviteStateEnum,
-  TimelineActor as TimelineActorEnum,
-  TimelineEventType as TimelineEventTypeEnum,
-} from '@/generated/prisma';
+import { DealerInviteState as DealerInviteStateEnum } from '@/generated/prisma';
+import type { DealerInvite, DealerInviteState, TimelineActor, TimelineEventType } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { recordTimelineEvent } from './timeline';
 
 export async function listDealers() {
-  return prisma.dealer.findMany({ orderBy: { name: 'asc' } });
+  return prisma.dealer.findMany({
+    orderBy: { name: 'asc' },
+  });
 }
 
 export async function getDealerById(id: string) {
@@ -43,12 +41,12 @@ export async function createDealerInvites(params: {
   dealerIds: string[];
   createdById: string;
   expiresAt: Date;
-}) {
+}): Promise<DealerInvite[]> {
   const { briefId, dealerIds, createdById, expiresAt } = params;
 
   const timelinePayloads: { dealerId: string; inviteId: string }[] = [];
 
-  const invites = await prisma.$transaction(async (tx) => {
+  const invites = await prisma.$transaction<DealerInvite[]>(async (tx) => {
     const created: DealerInvite[] = [];
 
     for (const dealerId of dealerIds) {
@@ -82,7 +80,6 @@ export async function createDealerInvites(params: {
           state: DealerInviteStateEnum.sent,
         },
       });
-
       created.push(invite);
       timelinePayloads.push({ dealerId, inviteId: invite.id });
     }
@@ -94,8 +91,8 @@ export async function createDealerInvites(params: {
     timelinePayloads.map((payload) =>
       recordTimelineEvent({
         briefId,
-        type: TimelineEventTypeEnum.dealer_invited,
-        actor: TimelineActorEnum.ops,
+        type: 'dealer_invited' as TimelineEventType,
+        actor: 'ops' as TimelineActor,
         payload,
       })
     )

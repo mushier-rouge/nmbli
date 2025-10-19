@@ -12,6 +12,8 @@ import { getBriefDetail } from '@/lib/services/briefs';
 import { listDealers } from '@/lib/services/dealers';
 import { formatCurrency } from '@/lib/utils/number';
 
+export const dynamic = 'force-dynamic';
+
 type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
 
 function formatPaymentSummaries(paymentPreferences: unknown, fallbackType: string | null) {

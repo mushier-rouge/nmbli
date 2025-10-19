@@ -147,22 +147,16 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
 
   if (process.env.NODE_ENV !== 'production') {
     console.debug('[gemini] Raw result meta', {
-      responseId: result.responseId,
-      candidateCount: result.candidates?.length ?? 0,
-      usage: result.usageMetadata,
+      responseDefined: Array.isArray(result.candidates) && result.candidates.length > 0,
+      error: (result as { error?: unknown }).error,
     });
     console.debug('[gemini] Full response', JSON.stringify(result, null, 2));
   }
-  void writeGeminiLog({
-    type: 'response',
-    responseId: result.responseId,
-    candidateCount: result.candidates?.length ?? 0,
-    usage: result.usageMetadata,
-  });
+  void writeGeminiLog({ type: 'response', result });
 
-  const combinedText = result.text?.trim() ?? '';
+  const combinedText = result.text ?? '';
 
-  if (!combinedText) {
+  if (combinedText.trim() === '') {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[gemini] Empty response payload', {
         candidates: result.candidates,
@@ -181,7 +175,7 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
     throw new GeminiError('Gemini response missing JSON payload');
   }
 
-  let candidateJson = combinedText;
+  let candidateJson = combinedText.trim();
   const firstBrace = candidateJson.indexOf('{');
   const lastBrace = candidateJson.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -208,29 +202,26 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
     throw new GeminiError('Failed to parse Gemini JSON response');
   }
 
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== 'object' || !('dealers' in parsed)) {
     throw new GeminiError('Gemini response missing dealers list');
   }
 
   const parsedRecord = parsed as Record<string, unknown>;
 
-  const dealersRaw = Array.isArray(parsedRecord.dealers)
-    ? (parsedRecord.dealers as unknown[])
-    : [];
+  const dealersRaw = Array.isArray(parsedRecord.dealers) ? (parsedRecord.dealers as unknown[]) : [];
 
   const dealers = dealersRaw
     .map((entry) => normalizeDealerRecord(entry as Record<string, unknown>))
     .filter((entry): entry is GeminiDealerRecord => Boolean(entry));
 
-  const sourcesRaw = Array.isArray(parsedRecord.sources) ? (parsedRecord.sources as unknown[]) : undefined;
-  const sources = sourcesRaw?.filter((item): item is string => typeof item === 'string');
-
-  const notesValue = parsedRecord.notes;
-  const notes = typeof notesValue === 'string' ? notesValue : undefined;
+  const sourcesRaw = parsedRecord.sources;
+  const notesRaw = parsedRecord.notes;
 
   return {
     dealers,
-    sources,
-    notes,
+    sources: Array.isArray(sourcesRaw)
+      ? (sourcesRaw.filter((item): item is string => typeof item === 'string'))
+      : undefined,
+    notes: typeof notesRaw === 'string' ? notesRaw : undefined,
   };
 }

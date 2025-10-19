@@ -37,6 +37,12 @@ enum DealerInviteState {
   expired
 }
 
+enum DealerProspectStatus {
+  pending
+  contacted
+  declined
+}
+
 enum QuoteStatus {
   draft
   published
@@ -93,12 +99,6 @@ enum FileOwnerType {
   timeline
 }
 
-enum DealerProspectStatus {
-  pending
-  contacted
-  declined
-}
-
 model User {
   id        String         @id @default(uuid())
   email     String         @unique
@@ -143,11 +143,11 @@ model Dealer {
   phone        String
   invites      DealerInvite[]
   quotes       Quote[]
+  prospects    DealerProspect[]
   opsOwnerId   String?
   opsOwner     User?          @relation("DealerOps", fields: [opsOwnerId], references: [id])
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  prospects    DealerProspect[]
 }
 
 model DealerInvite {
@@ -168,34 +168,28 @@ model DealerInvite {
 }
 
 model DealerProspect {
-  id              String               @id @default(uuid())
-  briefId         String
-  brief           Brief                @relation(fields: [briefId], references: [id])
-  dealerId        String?
-  dealer          Dealer?              @relation(fields: [dealerId], references: [id])
-  name            String
-  brand           String
-  city            String?
-  state           String?
-  zipcode         String?
-  address         String?
-  phone           String?
-  email           String?
-  website         String?
-  source          String?
-  notes           String?
-  driveHours      Float?
-  distanceMiles   Float?
-  status          DealerProspectStatus @default(pending)
+  id             String                @id @default(uuid())
+  briefId        String
+  brief          Brief                 @relation(fields: [briefId], references: [id])
+  dealerId       String?
+  dealer         Dealer?               @relation(fields: [dealerId], references: [id])
+  name           String
+  brand          String
+  city           String?
+  state          String?
+  zipcode        String?
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  source         String?
+  notes          String?
+  driveHours     Float?
+  distanceMiles  Float?
+  status         DealerProspectStatus @default(pending)
   lastContactedAt DateTime?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-}
-
-model DevInviteCode {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  createdAt DateTime @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model Quote {

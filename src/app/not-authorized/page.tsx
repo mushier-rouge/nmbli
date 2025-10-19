@@ -6,7 +6,7 @@ export default function NotAuthorizedPage() {
       <div className="max-w-md space-y-3">
         <h1 className="text-2xl font-semibold">You don&apos;t have access</h1>
         <p className="text-muted-foreground">
-          This area is reserved for a different role. If you believe you should have access, contact the Nmbli ops team.
+          This area is reserved for a different role. If you believe you should have access, contact the OutTheDoor ops team.
         </p>
       </div>
       <Link className="text-sm font-semibold text-primary underline" href="/">

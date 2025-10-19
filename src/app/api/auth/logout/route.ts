@@ -7,7 +7,5 @@ export async function POST(request: NextRequest) {
   const supabase = createSupabaseRouteClient(request, response);
   await supabase.auth.signOut();
   response.cookies.delete('impersonateDealerId');
-  response.cookies.delete('devInviteGranted');
-  response.cookies.delete('devInviteUser');
   return response;
 }
