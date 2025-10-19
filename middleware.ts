@@ -40,111 +40,116 @@ function mergeCookies(source: NextResponse, target: NextResponse) {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/d/') ||
-    pathname.startsWith('/auth') ||
-    pathname === '/' ||
-    pathname.startsWith('/manifest') ||
-    pathname.startsWith('/icons') ||
-    pathname.startsWith('/offline')
-  ) {
-    return NextResponse.next();
-  }
-
-  const requiresAuth = pathMatches(pathname, AUTH_PATHS);
-  if (!requiresAuth) {
-    return NextResponse.next();
-  }
-
-  const response = NextResponse.next();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.redirect(new URL('/login?reason=missing_supabase', request.url));
-  }
-
-  debugAuth('middleware', 'Evaluating request', {
-    path: pathname,
-    cookies: request.cookies.getAll().map((cookie) => cookie.name),
-  });
-
-  let session = null;
-
   try {
-    const supabase = createMiddlewareClient(
-      { req: request, res: response },
-      {
-        supabaseUrl,
-        supabaseKey: supabaseAnonKey,
-      },
-    );
+    const { pathname } = request.nextUrl;
 
-    const supabaseSession = await supabase.auth.getSession();
-    session = supabaseSession.data.session;
-  } catch (error) {
-    debugAuth('middleware', 'Supabase session lookup failed', {
+    if (
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/static') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/d/') ||
+      pathname.startsWith('/auth') ||
+      pathname === '/' ||
+      pathname.startsWith('/manifest') ||
+      pathname.startsWith('/icons') ||
+      pathname.startsWith('/offline')
+    ) {
+      return NextResponse.next();
+    }
+
+    const requiresAuth = pathMatches(pathname, AUTH_PATHS);
+    if (!requiresAuth) {
+      return NextResponse.next();
+    }
+
+    const response = NextResponse.next();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.redirect(new URL('/login?reason=missing_supabase', request.url));
+    }
+
+    debugAuth('middleware', 'Evaluating request', {
       path: pathname,
-      error: error instanceof Error ? error.message : String(error),
+      cookies: request.cookies.getAll().map((cookie) => cookie.name),
     });
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirectTo', pathname);
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    mergeCookies(response, redirectResponse);
-    return redirectResponse;
-  }
 
-  if (!session) {
-    debugAuth('middleware', 'No session detected', { path: pathname });
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirectTo', pathname);
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    mergeCookies(response, redirectResponse);
-    return redirectResponse;
-  }
+    let session = null;
 
-  const role = (session.user.user_metadata?.role as string | undefined) ?? 'buyer';
-  debugAuth('middleware', 'Session detected', {
-    path: pathname,
-    role,
-    email: session.user.email,
-  });
-  if (pathMatches(pathname, OPS_ONLY_PATHS) && role !== 'ops') {
-    const redirectResponse = NextResponse.redirect(new URL('/not-authorized', request.url));
-    mergeCookies(response, redirectResponse);
-    return redirectResponse;
-  }
+    try {
+      const supabase = createMiddlewareClient(
+        { req: request, res: response },
+        {
+          supabaseUrl,
+          supabaseKey: supabaseAnonKey,
+        },
+      );
 
-  const requireInvite = shouldRequireInviteCode();
-  const isInvitePage = pathname.startsWith('/invite-code');
-  const inviteCookie = request.cookies.get('devInviteGranted')?.value === 'true';
-  const inviteUser = request.cookies.get('devInviteUser')?.value;
-  const metadataInvite = hasInviteAccess(session.user.user_metadata ?? {});
-  const inviteSatisfied = metadataInvite || (inviteCookie && inviteUser === session.user.id);
-
-  if (requireInvite && role === 'buyer' && !inviteSatisfied) {
-    if (!isInvitePage) {
-      const inviteUrl = new URL('/invite-code', request.url);
-      const nextTarget = `${pathname}${request.nextUrl.search}`;
-      inviteUrl.searchParams.set('next', nextTarget);
-      const redirectResponse = NextResponse.redirect(inviteUrl);
+      const supabaseSession = await supabase.auth.getSession();
+      session = supabaseSession.data.session;
+    } catch (error) {
+      debugAuth('middleware', 'Supabase session lookup failed', {
+        path: pathname,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirectTo', pathname);
+      const redirectResponse = NextResponse.redirect(loginUrl);
       mergeCookies(response, redirectResponse);
       return redirectResponse;
     }
-  } else if (isInvitePage && inviteSatisfied) {
-    const nextParam = request.nextUrl.searchParams.get('next');
-    const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : '/briefs';
-    const redirectResponse = NextResponse.redirect(new URL(nextPath, request.url));
-    mergeCookies(response, redirectResponse);
-    return redirectResponse;
-  }
 
-  return response;
+    if (!session) {
+      debugAuth('middleware', 'No session detected', { path: pathname });
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirectTo', pathname);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      mergeCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+
+    const role = (session.user.user_metadata?.role as string | undefined) ?? 'buyer';
+    debugAuth('middleware', 'Session detected', {
+      path: pathname,
+      role,
+      email: session.user.email,
+    });
+    if (pathMatches(pathname, OPS_ONLY_PATHS) && role !== 'ops') {
+      const redirectResponse = NextResponse.redirect(new URL('/not-authorized', request.url));
+      mergeCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+
+    const requireInvite = shouldRequireInviteCode();
+    const isInvitePage = pathname.startsWith('/invite-code');
+    const inviteCookie = request.cookies.get('devInviteGranted')?.value === 'true';
+    const inviteUser = request.cookies.get('devInviteUser')?.value;
+    const metadataInvite = hasInviteAccess(session.user.user_metadata ?? {});
+    const inviteSatisfied = metadataInvite || (inviteCookie && inviteUser === session.user.id);
+
+    if (requireInvite && role === 'buyer' && !inviteSatisfied) {
+      if (!isInvitePage) {
+        const inviteUrl = new URL('/invite-code', request.url);
+        const nextTarget = `${pathname}${request.nextUrl.search}`;
+        inviteUrl.searchParams.set('next', nextTarget);
+        const redirectResponse = NextResponse.redirect(inviteUrl);
+        mergeCookies(response, redirectResponse);
+        return redirectResponse;
+      }
+    } else if (isInvitePage && inviteSatisfied) {
+      const nextParam = request.nextUrl.searchParams.get('next');
+      const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : '/briefs';
+      const redirectResponse = NextResponse.redirect(new URL(nextPath, request.url));
+      mergeCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+
+    return response;
+  } catch (error) {
+    console.error('[middleware] Unhandled failure', error instanceof Error ? { message: error.message, stack: error.stack } : error);
+    throw error;
+  }
 }
 
 export const config = {
