@@ -3,6 +3,8 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
 const DEBUG_AUTH = process.env.DEBUG_AUTH?.toLowerCase() === 'true';
 
+console.info('[middleware] module init');
+
 function shouldRequireInviteCode() {
   return (process.env.DEV_REQUIRE_INVITE_CODE ?? '').toLowerCase() === 'true';
 }
