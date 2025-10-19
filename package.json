@@ -17,7 +17,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "analyze": "next build --analyze",
     "gmail:send": "ts-node scripts/gmail-cli.ts send",
-    "gmail:threads": "ts-node scripts/gmail-cli.ts threads"
+    "gmail:threads": "ts-node scripts/gmail-cli.ts threads",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
