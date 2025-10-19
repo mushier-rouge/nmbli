@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getSessionContext } from '@/lib/auth/session';
 import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const session = await getSessionContext();
 

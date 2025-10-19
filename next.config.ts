@@ -7,6 +7,7 @@ const withPWA = createNextPWA({
   scope: '/',
   sw: 'service-worker.js',
   workboxOptions: {
+    skipWaiting: true,
     navigateFallback: '/offline',
     runtimeCaching: [
       {

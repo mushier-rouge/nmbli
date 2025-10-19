@@ -6,3 +6,4 @@
 - Before pushing, run `npm run lint` and note existing script lint debt (gmail CLI, prospect stats).
 - When migrating configs between `outTheDoor` and `nmbli`, verify database URLs still point to Supabase `apwdkwselqxafqfzizjk`.
 - Avoid leaking plain-text secrets—consolidate creds into password manager when possible.
+- New rule: always commit and push changes to GitHub so Vercel auto-deploys—no fixes stay local.

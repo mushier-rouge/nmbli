@@ -22,7 +22,7 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@google-cloud/local-auth": "^3.0.1",
-    "@google/genai": "^0.3.1",
+    "@google/genai": "^1.25.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.17.0",
     "@radix-ui/react-accordion": "^1.2.12",
