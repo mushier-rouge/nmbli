@@ -47,7 +47,7 @@ export function DealerQuoteForm({ token }: DealerQuoteFormProps) {
   const [primaryFile, setPrimaryFile] = useState<File | null>(null);
   const [supportingFiles, setSupportingFiles] = useState<File[]>([]);
 
-  const form = useForm<DealerQuoteFormValues>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       vin: '',
@@ -134,10 +134,10 @@ export function DealerQuoteForm({ token }: DealerQuoteFormProps) {
     });
   }
 
-  const totalIncentives = useMemo(
-    () => form.watch('incentives').reduce((sum, incentive) => sum + (incentive?.amount ?? 0), 0),
-    [form]
-  );
+  const totalIncentives = useMemo(() => {
+    const incentivesList = form.watch('incentives') ?? [];
+    return incentivesList.reduce((sum, incentive) => sum + (incentive?.amount ?? 0), 0);
+  }, [form]);
 
   return (
     <Form {...form}>
