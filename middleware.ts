@@ -40,19 +40,30 @@ function mergeCookies(source: NextResponse, target: NextResponse) {
 }
 
 function decodeBase64(value: string) {
+  if (typeof atob !== 'function') {
+    debugAuth('cookie', 'Base64 decode unavailable');
+    return null;
+  }
   try {
-    if (typeof atob === 'function') {
-      return atob(value);
-    }
-    if (typeof Buffer !== 'undefined') {
-      return Buffer.from(value, 'base64').toString('utf-8');
+    const binary = atob(value);
+    try {
+      // Convert binary string to UTF-8.
+      const utf8 = decodeURIComponent(
+        binary
+          .split('')
+          .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+          .join(''),
+      );
+      return utf8;
+    } catch {
+      return binary;
     }
   } catch (error) {
     debugAuth('cookie', 'Base64 decode failed', {
       error: error instanceof Error ? error.message : String(error),
     });
+    return null;
   }
-  return null;
 }
 
 function getSupabaseCookieName(url: string | undefined) {
