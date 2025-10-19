@@ -1,406 +1,77 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-
-const DEBUG_AUTH = (process.env.DEBUG_AUTH ?? '').toLowerCase() === 'true';
-const AUTH_PATHS = [/^\/brief/, /^\/buyer/, /^\/dashboard/, /^\/offers/, /^\/ops/, /^\/invite-code/];
-const OPS_ONLY_PATHS = [/^\/ops/];
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
-const COOKIE_CHUNK_SIZE = 3180;
-
-function debugAuth(scope: string, message: string, payload?: Record<string, unknown>) {
-  if (!DEBUG_AUTH) return;
-  if (payload) {
-    console.info(`[auth:${scope}] ${message}`, JSON.stringify(payload));
-  } else {
-    console.info(`[auth:${scope}] ${message}`);
-  }
-}
-
-function shouldRequireInviteCode() {
-  return (process.env.DEV_REQUIRE_INVITE_CODE ?? '').toLowerCase() === 'true';
-}
-
-function metadataHasInvite(metadata: Record<string, unknown> | null | undefined) {
-  if (!metadata) return false;
-  const value = metadata.devInviteGranted ?? metadata.dev_invite_granted;
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'true';
-  }
-  return Boolean(value);
-}
-
-function pathMatches(path: string, matchers: RegExp[]) {
-  return matchers.some((regex) => regex.test(path));
-}
-
-function mergeCookies(source: NextResponse, target: NextResponse) {
-  for (const cookie of source.cookies.getAll()) {
-    target.cookies.set(cookie);
-  }
-}
-
-function decodeBase64(value: string) {
-  if (typeof atob !== 'function') {
-    debugAuth('cookie', 'Base64 decode unavailable');
-    return null;
-  }
-  try {
-    const binary = atob(value);
-    try {
-      // Convert binary string to UTF-8.
-      const utf8 = decodeURIComponent(
-        binary
-          .split('')
-          .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
-          .join(''),
-      );
-      return utf8;
-    } catch {
-      return binary;
-    }
-  } catch (error) {
-    debugAuth('cookie', 'Base64 decode failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
-  }
-}
-
-function getSupabaseCookieName(url: string | undefined) {
-  if (!url) return null;
-  try {
-    const host = new URL(url).hostname;
-    const projectRef = host.split('.')[0];
-    return projectRef ? `sb-${projectRef}-auth-token` : null;
-  } catch (error) {
-    debugAuth('cookie', 'Failed to derive cookie name', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
-  }
-}
-
-type StoredSession = {
-  access_token: string;
-  refresh_token: string | null;
-  provider_token?: string | null;
-  provider_refresh_token?: string | null;
-} | null;
-
-function parseStoredSession(raw: string | null): StoredSession {
-  if (!raw) return null;
-
-  const maybeDecoded = decodeBase64(raw);
-  const text = maybeDecoded ?? raw;
-
-  try {
-    const parsed = JSON.parse(text) as unknown;
-    if (Array.isArray(parsed)) {
-      return {
-        access_token: typeof parsed[0] === 'string' ? parsed[0] : '',
-        refresh_token: typeof parsed[1] === 'string' ? parsed[1] : null,
-        provider_token: typeof parsed[2] === 'string' ? parsed[2] : null,
-        provider_refresh_token: typeof parsed[3] === 'string' ? parsed[3] : null,
-      };
-    }
-    if (parsed && typeof parsed === 'object' && 'access_token' in parsed) {
-      const record = parsed as Record<string, unknown>;
-      return {
-        access_token: typeof record.access_token === 'string' ? record.access_token : '',
-        refresh_token: typeof record.refresh_token === 'string' ? record.refresh_token : null,
-        provider_token: typeof record.provider_token === 'string' ? record.provider_token : null,
-        provider_refresh_token:
-          typeof record.provider_refresh_token === 'string' ? record.provider_refresh_token : null,
-      };
-    }
-  } catch (error) {
-    debugAuth('cookie', 'Supabase cookie parse failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-  return null;
-}
-
-function readSupabaseCookie(request: NextRequest, baseName: string) {
-  const base = request.cookies.get(baseName)?.value;
-  if (base) {
-    return { value: base, chunks: 0 };
-  }
-
-  const parts: string[] = [];
-  for (let index = 0; index < 24; index += 1) {
-    const chunk = request.cookies.get(`${baseName}.${index}`)?.value;
-    if (!chunk) break;
-    parts.push(chunk);
-  }
-
-  if (parts.length === 0) {
-    return { value: null, chunks: 0 };
-  }
-
-  return { value: parts.join(''), chunks: parts.length };
-}
-
-function clearSupabaseCookie(response: NextResponse, baseName: string, previousChunks: number) {
-  response.cookies.set({ name: baseName, value: '', path: '/', maxAge: 0 });
-  const limit = Math.max(previousChunks, 4);
-  for (let index = 0; index < limit; index += 1) {
-    response.cookies.set({ name: `${baseName}.${index}`, value: '', path: '/', maxAge: 0 });
-  }
-}
-
-function writeSupabaseCookie(
-  response: NextResponse,
-  baseName: string,
-  rawValue: string,
-  previousChunks: number,
-) {
-  if (!rawValue) {
-    clearSupabaseCookie(response, baseName, previousChunks);
-    return;
-  }
-
-  const options = {
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: true,
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-  };
-
-  if (rawValue.length <= COOKIE_CHUNK_SIZE) {
-    response.cookies.set({ name: baseName, value: rawValue, ...options });
-    clearSupabaseCookie(response, baseName, previousChunks);
-    return;
-  }
-
-  clearSupabaseCookie(response, baseName, previousChunks);
-  const regex = new RegExp(`.{1,${COOKIE_CHUNK_SIZE}}`, 'g');
-  const chunks = rawValue.match(regex) ?? [];
-  chunks.forEach((chunk, index) => {
-    response.cookies.set({ name: `${baseName}.${index}`, value: chunk, ...options });
-  });
-}
-
-interface SupabaseUserResponse {
-  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null;
-  status: number;
-}
-
-async function fetchSupabaseUser(
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-  accessToken: string,
-): Promise<SupabaseUserResponse> {
-  try {
-    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        apikey: supabaseAnonKey,
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return { status: response.status, user: null };
-    }
-
-    const user = (await response.json()) as SupabaseUserResponse['user'];
-    return { status: response.status, user };
-  } catch (error) {
-    debugAuth('supabase', 'User fetch failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return { status: 500, user: null };
-  }
-}
-
-interface SupabaseTokenResponse {
-  access_token: string;
-  refresh_token: string | null;
-  provider_token?: string | null;
-  provider_refresh_token?: string | null;
-  user?: SupabaseUserResponse['user'];
-}
-
-async function refreshSupabaseSession(
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-  refreshToken: string,
-): Promise<SupabaseTokenResponse | null> {
-  try {
-    const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: supabaseAnonKey,
-      },
-      cache: 'no-store',
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-
-    if (!response.ok) {
-      debugAuth('supabase', 'Refresh failed', { status: response.status });
-      return null;
-    }
-
-    const data = (await response.json()) as SupabaseTokenResponse;
-    return data;
-  } catch (error) {
-    debugAuth('supabase', 'Refresh threw', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
-  }
-}
-
-interface ResolvedSession {
-  access_token: string;
-  refresh_token: string | null;
-  user: NonNullable<SupabaseUserResponse['user']>;
-}
-
-async function resolveSupabaseSession(
-  request: NextRequest,
-  response: NextResponse,
-  supabaseUrl: string,
-  supabaseAnonKey: string,
-): Promise<ResolvedSession | null> {
-  const cookieName = getSupabaseCookieName(supabaseUrl);
-  if (!cookieName) return null;
-
-  const storedCookie = readSupabaseCookie(request, cookieName);
-  const storedSession = parseStoredSession(storedCookie.value);
-  if (!storedSession || !storedSession.access_token) {
-    return null;
-  }
-
-  let userResponse = await fetchSupabaseUser(supabaseUrl, supabaseAnonKey, storedSession.access_token);
-
-  if (userResponse.status === 401 && storedSession.refresh_token) {
-    const refreshed = await refreshSupabaseSession(supabaseUrl, supabaseAnonKey, storedSession.refresh_token);
-    if (!refreshed || !refreshed.access_token) {
-      clearSupabaseCookie(response, cookieName, storedCookie.chunks);
-      return null;
-    }
-
-    const serialized = JSON.stringify([
-      refreshed.access_token,
-      refreshed.refresh_token ?? storedSession.refresh_token,
-      refreshed.provider_token ?? storedSession.provider_token ?? null,
-      refreshed.provider_refresh_token ?? storedSession.provider_refresh_token ?? null,
-    ]);
-
-    writeSupabaseCookie(response, cookieName, serialized, storedCookie.chunks);
-
-    userResponse = {
-      status: 200,
-      user: refreshed.user ?? null,
-    };
-    storedSession.access_token = refreshed.access_token;
-    storedSession.refresh_token = refreshed.refresh_token ?? storedSession.refresh_token;
-  }
-
-  if (userResponse.status !== 200 || !userResponse.user) {
-    debugAuth('supabase', 'User lookup returned non-200', { status: userResponse.status });
-    return null;
-  }
-
-  return {
-    access_token: storedSession.access_token,
-    refresh_token: storedSession.refresh_token,
-    user: userResponse.user,
-  };
-}
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  try {
-    const { pathname } = request.nextUrl;
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-    if (
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/static') ||
-      pathname.startsWith('/api') ||
-      pathname.startsWith('/d/') ||
-      pathname.startsWith('/auth') ||
-      pathname.startsWith('/manifest') ||
-      pathname.startsWith('/icons') ||
-      pathname.startsWith('/offline')
-    ) {
-      return NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // If the cookie is set, update the request's cookies.
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          // If the cookie is removed, update the request's cookies.
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
     }
+  );
 
-    const requiresAuth = pathMatches(pathname, AUTH_PATHS);
-    if (!requiresAuth) {
-      return NextResponse.next();
-    }
+  // Refresh session if expired - required for Server Components
+  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
+  await supabase.auth.getUser();
 
-    const response = NextResponse.next();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      debugAuth('config', 'Missing Supabase env vars');
-      return NextResponse.redirect(new URL('/login?reason=missing_supabase', request.url));
-    }
-
-    debugAuth('middleware', 'Evaluating request', {
-      path: pathname,
-      cookies: request.cookies.getAll().map((cookie) => cookie.name),
-    });
-
-    const resolvedSession = await resolveSupabaseSession(request, response, supabaseUrl, supabaseAnonKey);
-
-    if (!resolvedSession) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirectTo', pathname);
-      const redirectResponse = NextResponse.redirect(loginUrl);
-      mergeCookies(response, redirectResponse);
-      return redirectResponse;
-    }
-
-    const { user } = resolvedSession;
-    const role = (user.user_metadata?.role as string | undefined) ?? 'buyer';
-
-    debugAuth('middleware', 'Session detected', {
-      path: pathname,
-      role,
-      email: user.email ?? null,
-    });
-
-    if (pathMatches(pathname, OPS_ONLY_PATHS) && role !== 'ops') {
-      const redirectResponse = NextResponse.redirect(new URL('/not-authorized', request.url));
-      mergeCookies(response, redirectResponse);
-      return redirectResponse;
-    }
-
-    const requireInvite = shouldRequireInviteCode();
-    const isInvitePage = pathname.startsWith('/invite-code');
-    const metadataInvite = metadataHasInvite(user.user_metadata);
-
-    if (requireInvite && role === 'buyer' && !metadataInvite && !isInvitePage) {
-      const inviteUrl = new URL('/invite-code', request.url);
-      inviteUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
-      const redirectResponse = NextResponse.redirect(inviteUrl);
-      mergeCookies(response, redirectResponse);
-      return redirectResponse;
-    }
-
-    if (isInvitePage && metadataInvite) {
-      const nextParam = request.nextUrl.searchParams.get('next');
-      const nextPath = nextParam && nextParam.startsWith('/') ? nextParam : '/briefs';
-      const redirectResponse = NextResponse.redirect(new URL(nextPath, request.url));
-      mergeCookies(response, redirectResponse);
-      return redirectResponse;
-    }
-
-    return response;
-  } catch (error) {
-    console.error('[middleware] Unhandled failure', error instanceof Error ? { message: error.message, stack: error.stack } : error);
-    throw error;
-  }
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|static|.*\..*).*)'],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
