@@ -1,6 +1,11 @@
 import { randomUUID } from 'crypto';
 
-import { Prisma } from '@/generated/prisma';
+import type { DealerInvite, DealerInviteState } from '@/generated/prisma';
+import {
+  DealerInviteState as DealerInviteStateEnum,
+  TimelineActor as TimelineActorEnum,
+  TimelineEventType as TimelineEventTypeEnum,
+} from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { recordTimelineEvent } from './timeline';
 
@@ -44,7 +49,7 @@ export async function createDealerInvites(params: {
   const timelinePayloads: { dealerId: string; inviteId: string }[] = [];
 
   const invites = await prisma.$transaction(async (tx) => {
-    const created: Prisma.DealerInvite[] = [];
+    const created: DealerInvite[] = [];
 
     for (const dealerId of dealerIds) {
       const existing = await tx.dealerInvite.findFirst({
@@ -53,10 +58,10 @@ export async function createDealerInvites(params: {
           dealerId,
           state: {
             in: [
-              Prisma.DealerInviteState.sent,
-              Prisma.DealerInviteState.viewed,
-              Prisma.DealerInviteState.submitted,
-              Prisma.DealerInviteState.revised,
+              DealerInviteStateEnum.sent,
+              DealerInviteStateEnum.viewed,
+              DealerInviteStateEnum.submitted,
+              DealerInviteStateEnum.revised,
             ],
           },
         },
@@ -74,7 +79,7 @@ export async function createDealerInvites(params: {
           createdById,
           magicLinkToken: randomUUID(),
           expiresAt,
-          state: Prisma.DealerInviteState.sent,
+          state: DealerInviteStateEnum.sent,
         },
       });
 
@@ -89,8 +94,8 @@ export async function createDealerInvites(params: {
     timelinePayloads.map((payload) =>
       recordTimelineEvent({
         briefId,
-        type: 'dealer_invited' as Prisma.TimelineEventType,
-        actor: 'ops' as Prisma.TimelineActor,
+        type: TimelineEventTypeEnum.dealer_invited,
+        actor: TimelineActorEnum.ops,
         payload,
       })
     )
@@ -103,13 +108,13 @@ export async function markInviteViewed(inviteId: string) {
   return prisma.dealerInvite.update({
     where: { id: inviteId },
     data: {
-      state: Prisma.DealerInviteState.viewed,
+      state: DealerInviteStateEnum.viewed,
       lastViewedAt: new Date(),
     },
   });
 }
 
-export async function updateInviteState(inviteId: string, state: Prisma.DealerInviteState) {
+export async function updateInviteState(inviteId: string, state: DealerInviteState) {
   return prisma.dealerInvite.update({
     where: { id: inviteId },
     data: { state },

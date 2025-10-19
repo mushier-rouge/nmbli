@@ -1,4 +1,4 @@
-import type { DealerProspectStatus, Prisma } from '@/generated/prisma';
+import type { DealerProspect, DealerProspectStatus, Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { geminiSearchDealers, type GeminiDealerRecord } from '@/lib/integrations/gemini';
 
@@ -57,11 +57,11 @@ export async function discoverDealerProspects(params: DiscoverDealerProspectsPar
   });
 
   if (searchResult.dealers.length === 0) {
-    return { created: 0, updated: 0, prospects: [] as Prisma.DealerProspect[] };
+    return { created: 0, updated: 0, prospects: [] as DealerProspect[] };
   }
 
   const existing = await prisma.dealerProspect.findMany({ where: { briefId } });
-  const existingMap = new Map<string, Prisma.DealerProspect>(
+  const existingMap = new Map<string, DealerProspect>(
     existing.map((item) => [
       buildProspectKey({
         name: item.name,

@@ -1,18 +1,14 @@
 import { Prisma } from '@/generated/prisma';
 
-export function toDecimal(value: number | string) {
-  if (value instanceof Prisma.Decimal) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
+export function toDecimal(value: number | string | Prisma.Decimal) {
+  if (typeof value === 'string' || typeof value === 'number') {
     return new Prisma.Decimal(value);
   }
 
-  return new Prisma.Decimal(value.toString());
+  return value;
 }
 
-export function toNullableDecimal(value: number | string | null | undefined) {
+export function toNullableDecimal(value: number | string | Prisma.Decimal | null | undefined) {
   if (value === null || value === undefined) {
     return null;
   }

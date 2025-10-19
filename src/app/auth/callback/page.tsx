@@ -1,12 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { debugAuth } from '@/lib/debug';
 
-export default function AuthCallbackPage() {
+function LoadingView() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+      <h1 className="text-2xl font-semibold">Checking your link…</h1>
+      <p className="text-sm text-muted-foreground">Please hold on while we verify your session.</p>
+    </main>
+  );
+}
+
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -80,10 +89,13 @@ export default function AuthCallbackPage() {
     );
   }
 
+  return <LoadingView />;
+}
+
+export default function AuthCallbackPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-2xl font-semibold">Checking your link…</h1>
-      <p className="text-sm text-muted-foreground">Please hold on while we verify your session.</p>
-    </main>
+    <Suspense fallback={<LoadingView />}>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

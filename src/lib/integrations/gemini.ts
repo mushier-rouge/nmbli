@@ -139,7 +139,7 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
         parts: [{ text: prompt }],
       },
     ],
-    generationConfig: {
+    config: {
       responseMimeType: 'application/json',
       temperature: 0.2,
     },
@@ -147,19 +147,22 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
 
   if (process.env.NODE_ENV !== 'production') {
     console.debug('[gemini] Raw result meta', {
-      responseDefined: Boolean(result.response),
-      error: (result as { error?: unknown }).error,
+      responseId: result.responseId,
+      candidateCount: result.candidates?.length ?? 0,
+      usage: result.usageMetadata,
     });
     console.debug('[gemini] Full response', JSON.stringify(result, null, 2));
   }
-  void writeGeminiLog({ type: 'response', result });
+  void writeGeminiLog({
+    type: 'response',
+    responseId: result.responseId,
+    candidateCount: result.candidates?.length ?? 0,
+    usage: result.usageMetadata,
+  });
 
-  const combinedText =
-    typeof (result as { text?: unknown }).text === 'function'
-      ? (result as { text: () => string | undefined }).text()
-      : (result as { text?: string }).text;
+  const combinedText = result.text?.trim() ?? '';
 
-  if (typeof combinedText !== 'string' || combinedText.trim() === '') {
+  if (!combinedText) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[gemini] Empty response payload', {
         candidates: result.candidates,
@@ -178,7 +181,7 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
     throw new GeminiError('Gemini response missing JSON payload');
   }
 
-  let candidateJson = combinedText.trim();
+  let candidateJson = combinedText;
   const firstBrace = candidateJson.indexOf('{');
   const lastBrace = candidateJson.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -205,26 +208,29 @@ export async function geminiSearchDealers(input: GeminiDealerSearchInput): Promi
     throw new GeminiError('Failed to parse Gemini JSON response');
   }
 
-  if (!parsed || typeof parsed !== 'object' || !('dealers' in parsed)) {
+  if (!parsed || typeof parsed !== 'object') {
     throw new GeminiError('Gemini response missing dealers list');
   }
 
-  const dealersRaw = Array.isArray((parsed as { dealers: unknown }).dealers)
-    ? ((parsed as { dealers: unknown[] }).dealers)
+  const parsedRecord = parsed as Record<string, unknown>;
+
+  const dealersRaw = Array.isArray(parsedRecord.dealers)
+    ? (parsedRecord.dealers as unknown[])
     : [];
 
   const dealers = dealersRaw
     .map((entry) => normalizeDealerRecord(entry as Record<string, unknown>))
     .filter((entry): entry is GeminiDealerRecord => Boolean(entry));
 
+  const sourcesRaw = Array.isArray(parsedRecord.sources) ? (parsedRecord.sources as unknown[]) : undefined;
+  const sources = sourcesRaw?.filter((item): item is string => typeof item === 'string');
+
+  const notesValue = parsedRecord.notes;
+  const notes = typeof notesValue === 'string' ? notesValue : undefined;
+
   return {
     dealers,
-    sources: Array.isArray((parsed as { sources?: unknown }).sources)
-      ? ((parsed as { sources: unknown[] }).sources.filter((item) => typeof item === 'string') as string[])
-      : undefined,
-    notes:
-      typeof (parsed as { notes?: unknown }).notes === 'string'
-        ? String((parsed as { notes: string }).notes)
-        : undefined,
+    sources,
+    notes,
   };
 }

@@ -1,13 +1,15 @@
-import type { Prisma } from '@/generated/prisma';
+import type { Prisma, TimelineActor, TimelineEventType } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 
-export async function recordTimelineEvent(params: {
+interface RecordTimelineEventParams {
   briefId: string;
-  type: Prisma.TimelineEventType;
-  actor: Prisma.TimelineActor;
+  type: TimelineEventType;
+  actor: TimelineActor;
   payload?: Prisma.InputJsonValue;
   quoteId?: string | null;
-}) {
+}
+
+export async function recordTimelineEvent(params: RecordTimelineEventParams) {
   const { briefId, type, actor, payload = {}, quoteId = null } = params;
 
   return prisma.timelineEvent.create({
