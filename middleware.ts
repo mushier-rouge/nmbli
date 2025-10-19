@@ -68,23 +68,34 @@ export async function middleware(request: NextRequest) {
     cookies: request.cookies.getAll().map((cookie) => cookie.name),
   });
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        response.cookies.set({ name, value, ...options });
-      },
-      remove(name: string, options: CookieOptions) {
-        response.cookies.set({ name, value: '', ...options });
-      },
-    },
-  });
+  let session = null;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          response.cookies.set({ name, value: '', ...options });
+        },
+      },
+    });
+
+    const supabaseSession = await supabase.auth.getSession();
+    session = supabaseSession.data.session;
+  } catch (error) {
+    debugAuth('middleware', 'Supabase session lookup failed', {
+      path: pathname,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirectTo', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (!session) {
     debugAuth('middleware', 'No session detected', { path: pathname });
