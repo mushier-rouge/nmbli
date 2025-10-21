@@ -1,6 +1,17 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// Polyfill __dirname for edge runtime compatibility with dependencies that expect it.
+const globalDirname = globalThis as { __dirname?: string };
+if (typeof globalDirname.__dirname === 'undefined') {
+  Object.defineProperty(globalDirname, '__dirname', {
+    value: '/',
+    configurable: false,
+    enumerable: false,
+    writable: false,
+  });
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
