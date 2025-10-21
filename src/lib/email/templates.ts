@@ -17,13 +17,13 @@ interface DealerInviteTemplateInput {
 }
 
 export function dealerInviteSubject() {
-  return `OutTheDoor | Quote request for your buyer`;
+  return `nmbli | Quote request for your buyer`;
 }
 
 export function dealerInviteContent({ dealerName, brief, link, expiresAt }: DealerInviteTemplateInput) {
-  const text = `Hi ${dealerName},\n\nWe\'re sourcing an itemized out-the-door quote for a buyer in ${brief.zipcode}.\nThey are shopping for ${brief.makes.join(', ')} ${brief.models.join(', ')} with a max budget of ${brief.maxOTD}.\n\nPlease submit your detailed quote (including doc fees, DMV, add-ons, incentives) using this secure link:\n${link}\n\nThe link expires ${expiresAt.toLocaleString()}.\n\nThank you,\nOutTheDoor Ops`;
+  const text = `Hi ${dealerName},\n\nWe\'re sourcing an itemized out-the-door quote for a buyer in ${brief.zipcode}.\nThey are shopping for ${brief.makes.join(', ')} ${brief.models.join(', ')} with a max budget of ${brief.maxOTD}.\n\nPlease submit your detailed quote (including doc fees, DMV, add-ons, incentives) using this secure link:\n${link}\n\nThe link expires ${expiresAt.toLocaleString()}.\n\nThank you,\nnmbli Ops`;
 
-  const html = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>We\'re sourcing a transparent, itemized out-the-door quote for a buyer in <strong>${brief.zipcode}</strong>.</p><p>The buyer is interested in <strong>${brief.makes.join(', ')} ${brief.models.join(', ')}</strong> with a max budget of <strong>${brief.maxOTD}</strong>.</p><p>Use the secure link below to submit your quote with line items for doc fees, DMV, add-ons, and incentives.</p><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit your quote</a></p><p>This link expires on ${expiresAt.toLocaleString()}.</p><p>Thanks,<br/>OutTheDoor Ops</p></body></html>`;
+  const html = `<!doctype html><html><body><p>Hi ${dealerName},</p><p>We\'re sourcing a transparent, itemized out-the-door quote for a buyer in <strong>${brief.zipcode}</strong>.</p><p>The buyer is interested in <strong>${brief.makes.join(', ')} ${brief.models.join(', ')}</strong> with a max budget of <strong>${brief.maxOTD}</strong>.</p><p>Use the secure link below to submit your quote with line items for doc fees, DMV, add-ons, and incentives.</p><p><a href="${link}" style="background:#111827;color:#fff;padding:12px 16px;border-radius:6px;display:inline-block;text-decoration:none;">Submit your quote</a></p><p>This link expires on ${expiresAt.toLocaleString()}.</p><p>Thanks,<br/>nmbli Ops</p></body></html>`;
 
   return { text, html };
 }
