@@ -1,37 +1,40 @@
+// Polyfill __dirname BEFORE imports - edge runtime compatibility
+// Must be at module level to ensure it's defined before any module initialization
+if (typeof globalThis.__dirname === 'undefined') {
+  try {
+    Object.defineProperty(globalThis, '__dirname', {
+      value: '/',
+      configurable: true,
+      writable: false,
+      enumerable: false,
+    });
+  } catch {
+    // If defineProperty fails, try direct assignment
+    (globalThis as any).__dirname = '/';
+  }
+}
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase environment variables');
+    return response;
+  }
+
   try {
-    // Polyfill __dirname for edge runtime - must be inside middleware to ensure it runs first
-    const globalDirname = globalThis as { __dirname?: string };
-    if (typeof globalDirname.__dirname === 'undefined') {
-      Object.defineProperty(globalDirname, '__dirname', {
-        value: '/',
-        configurable: true,
-        enumerable: false,
-        writable: false,
-      });
-    }
-
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const supabaseAnonKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      // This error will be caught by the Vercel build process and displayed in the deployment logs.
-      throw new Error(
-        'Missing Supabase environment variables: expected NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY/SUPABASE_ANON_KEY to be available. Please check your Vercel project settings.'
-      );
-    }
-
     const supabase = createServerClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -41,7 +44,6 @@ export async function middleware(request: NextRequest) {
             return request.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
-            // If the cookie is set, update the request's cookies.
             request.cookies.set({
               name,
               value,
@@ -59,7 +61,6 @@ export async function middleware(request: NextRequest) {
             });
           },
           remove(name: string, options: CookieOptions) {
-            // If the cookie is removed, update the request's cookies.
             request.cookies.set({
               name,
               value: '',
@@ -81,28 +82,13 @@ export async function middleware(request: NextRequest) {
     );
 
     // Refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
     await supabase.auth.getUser();
-
-    return response;
   } catch (error) {
-    // Log error but don't expose internal details to client
-    console.error('Middleware error:', error);
-
-    // Return 404 for bot/scanner requests, 500 for legitimate traffic
-    const path = request.nextUrl.pathname;
-    const isBot = path.includes('wp-') ||
-                  path.includes('wordpress') ||
-                  path.includes('.php') ||
-                  path.includes('.env') ||
-                  path.includes('admin');
-
-    if (isBot) {
-      return new NextResponse(null, { status: 404 });
-    }
-
-    return new NextResponse('Internal Server Error', { status: 500 });
+    // Log but continue - don't break the request
+    console.error('Middleware session refresh failed:', error);
   }
+
+  return response;
 }
 
 export const config = {
