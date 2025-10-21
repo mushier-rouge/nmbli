@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'OutTheDoor',
-    short_name: 'OutTheDoor',
+    name: 'nmbli',
+    short_name: 'nmbli',
     description: 'Compare out-the-door car quotes with confidence.',
     start_url: '/',
     scope: '/',

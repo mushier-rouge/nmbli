@@ -43,7 +43,7 @@ export async function sendDealerInviteEmail(params: {
   }
 
   await resend.emails.send({
-    from: 'OutTheDoor Ops <ops@mail.outthedoor.app>',
+    from: 'nmbli Ops <ops@mail.nmbli.com>',
     to: dealerEmail,
     subject: dealerInviteSubject(),
     html: content.html,
@@ -68,7 +68,7 @@ export async function sendCounterEmail(params: {
   }
 
   await resend.emails.send({
-    from: 'OutTheDoor Ops <ops@mail.outthedoor.app>',
+    from: 'nmbli Ops <ops@mail.nmbli.com>',
     to: dealerEmail,
     subject: counterEmailSubject(counter),
     html: content.html,
@@ -93,7 +93,7 @@ export async function sendContractMismatchEmail(params: {
   }
 
   await resend.emails.send({
-    from: 'OutTheDoor Ops <ops@mail.outthedoor.app>',
+    from: 'nmbli Ops <ops@mail.nmbli.com>',
     to: dealerEmail,
     subject: contractMismatchSubject(),
     html: content.html,
