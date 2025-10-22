@@ -7,33 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { listBuyerBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
-import { formatCurrency } from '@/lib/utils/number';
+import { formatPaymentSummary } from '@/lib/utils/payment';
 
 export const dynamic = 'force-dynamic';
-
-type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
-
-function formatPaymentSummary(paymentPreferences: unknown, fallbackType: string | null) {
-  const preferences = Array.isArray(paymentPreferences)
-    ? (paymentPreferences as PaymentPreferenceRecord[])
-    : [];
-
-  if (preferences.length === 0) {
-    return fallbackType ? [fallbackType.charAt(0).toUpperCase() + fallbackType.slice(1)] : [];
-  }
-
-  return preferences.map((pref) => {
-    const label = pref.type.charAt(0).toUpperCase() + pref.type.slice(1);
-    const parts: string[] = [label];
-    if (typeof pref.downPayment === 'number' && !Number.isNaN(pref.downPayment)) {
-      parts.push(`${formatCurrency(pref.downPayment)} down`);
-    }
-    if (typeof pref.monthlyBudget === 'number' && !Number.isNaN(pref.monthlyBudget)) {
-      parts.push(`${formatCurrency(pref.monthlyBudget)} / mo`);
-    }
-    return parts.join(' • ');
-  });
-}
 
 export default async function BriefsPage() {
   const session = await getSessionContext();
