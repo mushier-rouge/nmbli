@@ -297,6 +297,8 @@ enum TimelineEventType {
   contract_mismatch
   contract_pass
   completed
+  automation_started
+  dealer_contacted
 }
 
 enum FileOwnerType {

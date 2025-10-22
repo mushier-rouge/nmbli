@@ -4,7 +4,7 @@ import { gmailClient } from '@/lib/email/gmail';
 import { twilioClient } from '@/lib/sms/twilio';
 import { generateQuoteRequestEmail } from '@/lib/email/templates/quote-request';
 import { recordTimelineEvent } from './timeline';
-import { TimelineEventTypeEnum, TimelineActorEnum } from '@/lib/types/timeline';
+import type { TimelineActor, TimelineEventType } from '@/generated/prisma';
 
 export interface ContactMethod {
   type: 'email' | 'sms' | 'skyvern';
@@ -32,8 +32,8 @@ export class BriefAutomationOrchestrator {
       // Step 1: Discover dealers
       await recordTimelineEvent({
         briefId,
-        type: TimelineEventTypeEnum.automation_started,
-        actor: TimelineActorEnum.system,
+        type: 'automation_started',
+        actor: 'system',
         payload: { action: 'discovering_dealers' },
       });
 
@@ -44,8 +44,8 @@ export class BriefAutomationOrchestrator {
 
       await recordTimelineEvent({
         briefId,
-        type: TimelineEventTypeEnum.automation_started,
-        actor: TimelineActorEnum.system,
+        type: 'automation_started',
+        actor: 'system',
         payload: { dealers_found: dealers.length },
       });
 
@@ -64,8 +64,8 @@ export class BriefAutomationOrchestrator {
 
       await recordTimelineEvent({
         briefId,
-        type: TimelineEventTypeEnum.automation_started,
-        actor: TimelineActorEnum.system,
+        type: 'automation_started',
+        actor: 'system',
         payload: {
           error: error instanceof Error ? error.message : 'Unknown error',
         },
@@ -181,8 +181,8 @@ export class BriefAutomationOrchestrator {
 
     await recordTimelineEvent({
       briefId: brief.id,
-      type: TimelineEventTypeEnum.dealer_contacted,
-      actor: TimelineActorEnum.system,
+      type: 'dealer_contacted',
+      actor: 'system',
       payload: {
         dealer: dealership.name,
         method: 'email',
@@ -219,8 +219,8 @@ export class BriefAutomationOrchestrator {
 
     await recordTimelineEvent({
       briefId: brief.id,
-      type: TimelineEventTypeEnum.dealer_contacted,
-      actor: TimelineActorEnum.system,
+      type: 'dealer_contacted',
+      actor: 'system',
       payload: {
         dealer: dealership.name,
         method: 'sms',
@@ -242,8 +242,8 @@ export class BriefAutomationOrchestrator {
 
     await recordTimelineEvent({
       briefId: brief.id,
-      type: TimelineEventTypeEnum.dealer_contacted,
-      actor: TimelineActorEnum.system,
+      type: 'dealer_contacted',
+      actor: 'system',
       payload: {
         dealer: dealership.name,
         method: 'skyvern',
