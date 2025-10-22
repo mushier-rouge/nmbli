@@ -4,8 +4,6 @@ import { BriefForm } from '@/components/brief/brief-form';
 import { Button } from '@/components/ui/button';
 import { getSessionContext } from '@/lib/auth/session';
 
-export const dynamic = 'force-dynamic';
-
 export default async function NewBriefPage() {
   const session = await getSessionContext();
   if (!session || session.role !== 'buyer') {
