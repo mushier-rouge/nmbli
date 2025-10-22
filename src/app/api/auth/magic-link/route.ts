@@ -44,6 +44,14 @@ export async function POST(request: Request) {
   const nextParam = redirectTo ? encodeURIComponent(redirectTo) : '';
   const redirect = `${appUrl}/auth/callback${nextParam ? `?next=${nextParam}` : ''}`;
 
+  debugAuth('magic-link', 'Sending OTP with redirect', {
+    email,
+    appUrl,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    redirect,
+    allEnvVars: Object.keys(process.env).filter(k => k.includes('APP_URL')),
+  });
+
   const { error } = await client.auth.signInWithOtp({
     email,
     options: {
