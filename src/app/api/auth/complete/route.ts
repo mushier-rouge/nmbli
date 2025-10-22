@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import type { Prisma } from '@prisma/client';
-
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { UserRole } from '@/generated/prisma';
@@ -20,9 +18,13 @@ const serializeError = (error: unknown): string => {
   }
 };
 
-const isPrismaKnownRequestError = (
-  error: unknown,
-): error is Prisma.PrismaClientKnownRequestError => {
+type PrismaKnownRequestError = {
+  code: string;
+  clientVersion: string;
+  meta?: Record<string, unknown> | undefined;
+};
+
+const isPrismaKnownRequestError = (error: unknown): error is PrismaKnownRequestError => {
   if (!error || typeof error !== 'object') {
     return false;
   }
