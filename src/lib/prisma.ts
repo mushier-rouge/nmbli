@@ -39,14 +39,23 @@ if (!prismaEnumRegistry.TimelineActor) {
   prismaEnumRegistry.TimelineActor = TimelineActor;
 }
 
-const getDatabaseUrl = () => {
-  const databaseUrl = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
+const appendSslMode = (url: string) => {
+  if (url.includes('sslmode=')) {
+    return url;
+  }
 
-  if (!databaseUrl) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}sslmode=require`;
+};
+
+const getDatabaseUrl = () => {
+  const rawUrl = process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL;
+
+  if (!rawUrl) {
     throw new Error('Missing DATABASE_POOL_URL or DATABASE_URL environment variable for Prisma client');
   }
 
-  return databaseUrl;
+  return appendSslMode(rawUrl);
 };
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
