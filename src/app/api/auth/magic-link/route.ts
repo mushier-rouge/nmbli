@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 
 import { debugAuth } from '@/lib/debug';
 
+// Fixed NEXT_PUBLIC_APP_URL to remove trailing newline (2025-10-21)
+
 const requestSchema = z.object({
   email: z.string().email(),
   roleHint: z.enum(['buyer', 'dealer', 'ops']).default('buyer'),
