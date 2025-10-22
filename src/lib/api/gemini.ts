@@ -29,7 +29,7 @@ export async function findDealersInState(params: {
 }): Promise<DealerInfo[]> {
   const { make, state, count = 15 } = params;
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
   const prompt = `Find ${count} authorized ${make} dealerships in ${state}.
 
@@ -97,7 +97,7 @@ export async function extractDealerContact(params: {
 }): Promise<{ email?: string; phone?: string }> {
   const { dealerName, websiteUrl } = params;
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
   const prompt = websiteUrl
     ? `Find the sales department contact information for ${dealerName} at ${websiteUrl}. Return JSON with "email" and "phone" fields.`
