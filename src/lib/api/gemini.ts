@@ -2,11 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const apiKey = process.env.GEMINI_API_KEY;
 
-if (!apiKey) {
-  throw new Error('GEMINI_API_KEY environment variable is required');
-}
-
-const genAI = new GoogleGenerativeAI(apiKey);
+// Initialize with a placeholder if not set (will throw error when actually used)
+const genAI = new GoogleGenerativeAI(apiKey || 'placeholder');
 
 export interface DealerInfo {
   name: string;
@@ -27,6 +24,10 @@ export async function findDealersInState(params: {
   state: string;
   count?: number;
 }): Promise<DealerInfo[]> {
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is required');
+  }
+
   const { make, state, count = 15 } = params;
 
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
