@@ -10,7 +10,8 @@ import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
 import { formatPaymentSummary } from '@/lib/utils/payment';
 import { formatCurrency } from '@/lib/utils/number';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 60 seconds - fresh data without force-dynamic
+export const revalidate = 60;
 
 export default async function BriefsPage() {
   const session = await getSessionContext();
