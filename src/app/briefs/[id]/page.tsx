@@ -13,7 +13,8 @@ import { getSessionContext } from '@/lib/auth/session';
 import { canAccessBrief } from '@/lib/auth/roles';
 import { formatCurrency, formatPercent } from '@/lib/utils/number';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 60 seconds - fresh quote data without force-dynamic
+export const revalidate = 60;
 
 type PaymentPreferenceRecord = { type: string; downPayment?: number; monthlyBudget?: number };
 
