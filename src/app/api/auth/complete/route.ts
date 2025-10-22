@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
     debugAuth('complete', 'Upserting user to database', { userId: user.id, email, role, name });
 
     try {
+      debugAuth('complete', 'About to upsert user', { userId: user.id, email, role, name });
+
       await prisma.user.upsert({
         where: { id: user.id },
         update: {
@@ -50,11 +52,24 @@ export async function POST(request: NextRequest) {
           name,
         },
       });
+
       debugAuth('complete', 'User upserted successfully');
     } catch (dbError) {
-      console.error('Database upsert failed:', dbError);
-      debugAuth('complete', 'Database error', { error: dbError instanceof Error ? dbError.message : String(dbError) });
-      return NextResponse.json({ message: 'Database error during user creation' }, { status: 500 });
+      // Log the full error object with all details
+      console.error('Database upsert failed - Full error:', JSON.stringify(dbError, Object.getOwnPropertyNames(dbError), 2));
+      console.error('Database upsert failed - Error name:', (dbError as any)?.name);
+      console.error('Database upsert failed - Error message:', (dbError as any)?.message);
+      console.error('Database upsert failed - Error code:', (dbError as any)?.code);
+      console.error('Database upsert failed - Error meta:', (dbError as any)?.meta);
+
+      debugAuth('complete', 'Database error', {
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+        code: (dbError as any)?.code,
+        meta: (dbError as any)?.meta,
+      });
+
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Database error during user creation';
+      return NextResponse.json({ message: errorMessage }, { status: 500 });
     }
 
     if (!user.user_metadata?.role) {
