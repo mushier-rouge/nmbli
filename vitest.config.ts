@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/.next/**'],
     coverage: {
       reporter: ['text', 'lcov'],
     },

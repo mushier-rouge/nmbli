@@ -1,0 +1,8 @@
+{
+  "timestamp": "$timestamp",
+  "command": "CI=1 npx playwright test tests/e2e/magic-link-login.e2e.ts",
+  "exitCode": 1,
+  "status": "failed",
+  "stdout": "Error: No tests found.",
+  "stderr": ""
+}

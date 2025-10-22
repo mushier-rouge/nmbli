@@ -1,0 +1,8 @@
+{
+  "timestamp": "$timestamp",
+  "command": "npx playwright test tests/e2e/magic-link-login.e2e.ts",
+  "exitCode": 1,
+  "status": "failed",
+  "stdout": "Error: Process from config.webServer exited early.",
+  "stderr": "[WebServer] Failed to start server: listen EPERM 0.0.0.0:3000"
+}
