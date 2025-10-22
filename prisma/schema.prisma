@@ -41,6 +41,9 @@ model Brief {
   dealerProspects    DealerProspect[]
   quotes             Quote[]
   timelineEvents     TimelineEvent[]
+  skyvernRuns        SkyvernRun[]
+  emailMessages      EmailMessage[]
+  smsMessages        SmsMessage[]
 }
 
 model Dealer {
@@ -300,4 +303,116 @@ enum FileOwnerType {
   quote
   contract
   timeline
+}
+
+// Dealer Automation Tables
+
+model Dealership {
+  id               String          @id @default(uuid())
+  name             String
+  make             String
+  state            String
+  city             String?
+  address          String?
+  zipcode          String?
+  phone            String?
+  website          String?
+  email            String?
+  discoveredAt     DateTime        @default(now())
+  verified         Boolean         @default(false)
+  lastContactedAt  DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  contacts         DealerContact[]
+  skyvernRuns      SkyvernRun[]
+  emailMessages    EmailMessage[]
+  smsMessages      SmsMessage[]
+
+  @@index([make, state])
+  @@index([verified])
+}
+
+model DealerContact {
+  id                      String         @id @default(uuid())
+  dealershipId            String
+  name                    String?
+  email                   String         @unique
+  phone                   String?
+  role                    String         @default("sales")
+  firstContactedAt        DateTime       @default(now())
+  lastContactedAt         DateTime?
+  totalInteractions       Int            @default(0)
+  preferredContactMethod  String         @default("email")
+  notes                   Json           @default("{}")
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  dealership              Dealership     @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+  emailMessages           EmailMessage[]
+  smsMessages             SmsMessage[]
+
+  @@index([email])
+  @@index([dealershipId])
+}
+
+model SkyvernRun {
+  id            String      @id @default(uuid())
+  briefId       String
+  dealershipId  String?
+  workflowId    String?
+  status        String      @default("pending")
+  costCents     Int         @default(0)
+  startedAt     DateTime    @default(now())
+  completedAt   DateTime?
+  result        Json?
+  screenshots   Json?
+  errorMessage  String?
+  createdAt     DateTime    @default(now())
+  brief         Brief       @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  dealership    Dealership? @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+
+  @@index([briefId])
+  @@index([status])
+}
+
+model EmailMessage {
+  id             String         @id @default(uuid())
+  briefId        String
+  dealershipId   String?
+  contactId      String?
+  direction      String
+  toEmail        String?
+  fromEmail      String?
+  subject        String?
+  bodyHtml       String?
+  status         String         @default("sent")
+  sentAt         DateTime       @default(now())
+  gmailMessageId String?
+  createdAt      DateTime       @default(now())
+  brief          Brief          @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  dealership     Dealership?    @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+  contact        DealerContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([briefId])
+}
+
+model SmsMessage {
+  id           String         @id @default(uuid())
+  briefId      String
+  dealershipId String?
+  contactId    String?
+  direction    String
+  toNumber     String?
+  fromNumber   String?
+  body         String?
+  status       String         @default("sent")
+  costCents    Int            @default(0)
+  sentAt       DateTime       @default(now())
+  twilioSid    String?
+  createdAt    DateTime       @default(now())
+  brief        Brief          @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  dealership   Dealership?    @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+  contact      DealerContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([briefId])
+  @@index([direction])
 }
