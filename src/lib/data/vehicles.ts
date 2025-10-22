@@ -1,5 +1,4 @@
-// Static import works correctly in both Next.js server and client
-import vehicleData from './vehicles.json';
+import { VEHICLES_DATA } from './vehicles-data';
 
 export type VehicleModel = {
   model: string;
@@ -8,7 +7,7 @@ export type VehicleModel = {
 
 export type VehicleData = Record<string, VehicleModel[]>;
 
-export const vehicles: VehicleData = vehicleData as VehicleData;
+export const vehicles: VehicleData = VEHICLES_DATA;
 
 /**
  * Get all available makes sorted alphabetically
