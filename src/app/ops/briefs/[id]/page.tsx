@@ -11,6 +11,7 @@ import { getSessionContext } from '@/lib/auth/session';
 import { getBriefDetail } from '@/lib/services/briefs';
 import { listDealers } from '@/lib/services/dealers';
 import { formatPaymentSummary as formatPaymentSummaries } from '@/lib/utils/payment';
+import { getQuoteStatusLabel, getQuoteStatusVariant } from '@/lib/constants/status';
 
 export const dynamic = 'force-dynamic';
 
@@ -134,8 +135,8 @@ export default async function OpsBriefDetailPage({ params }: { params: Promise<{
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={quote.status === 'published' ? 'secondary' : quote.status === 'draft' ? 'outline' : 'destructive'} className="capitalize">
-                      {quote.status}
+                    <Badge variant={getQuoteStatusVariant(quote.status)}>
+                      {getQuoteStatusLabel(quote.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>{quote.source}</TableCell>
