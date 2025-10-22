@@ -1,12 +1,12 @@
+// Static import works correctly in both Next.js server and client
+import vehicleData from './vehicles.json';
+
 export type VehicleModel = {
   model: string;
   trims: string[];
 };
 
 export type VehicleData = Record<string, VehicleModel[]>;
-
-// Static import works correctly in both Next.js server and client
-import vehicleData from './vehicles.json';
 
 export const vehicles: VehicleData = vehicleData as VehicleData;
 
