@@ -38,10 +38,11 @@ export async function POST(request: NextRequest) {
     try {
       debugAuth('complete', 'About to upsert user', { userId: user.id, email, role, name });
 
+      // Upsert by email to handle cases where the email exists with a different Supabase ID
       await prisma.user.upsert({
-        where: { id: user.id },
+        where: { email },
         update: {
-          email,
+          id: user.id, // Update the ID to match the current Supabase user ID
           role,
           name,
         },
