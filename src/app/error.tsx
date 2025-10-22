@@ -25,7 +25,7 @@ export default function Error({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            We encountered an unexpected error. This has been logged and we'll look into it.
+            We encountered an unexpected error. This has been logged and we&apos;ll look into it.
           </p>
           {process.env.NODE_ENV === 'development' && (
             <details className="rounded-md bg-muted p-4 text-xs">
