@@ -54,7 +54,9 @@ export default function AuthCallbackPage() {
         });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
-          throw new Error(body.message ?? 'Failed to finalise login');
+          const errorMsg = body.message ?? 'Failed to finalise login';
+          console.error('Auth complete failed:', { status: response.status, body, errorMsg });
+          throw new Error(errorMsg);
         }
 
         router.replace(next.startsWith('/') ? next : `/${next}`);
@@ -74,7 +76,7 @@ export default function AuthCallbackPage() {
         <h1 className="text-2xl font-semibold">Couldn&apos;t sign you in</h1>
         <p className="text-sm text-muted-foreground">{error}</p>
         <p className="text-xs text-muted-foreground">
-          Request a fresh magic link or contact ops@nmbli.app if the issue persists.
+          Request a fresh magic link or contact support if the issue persists.
         </p>
       </main>
     );
