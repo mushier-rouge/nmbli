@@ -4,17 +4,65 @@ import { gmailClient } from '@/lib/email/gmail';
 import { twilioClient } from '@/lib/sms/twilio';
 import { generateQuoteRequestEmail } from '@/lib/email/templates/quote-request';
 import { recordTimelineEvent } from './timeline';
-import type { TimelineActor, TimelineEventType } from '@/generated/prisma';
+import type { Prisma, Brief, Dealership } from '@/generated/prisma';
 
-export interface ContactMethod {
-  type: 'email' | 'sms' | 'skyvern';
+type PaymentPreference = {
+  downPayment?: number | null;
+  monthlyBudget?: number | null;
+} & Record<string, Prisma.JsonValue>;
+
+function isPaymentPreference(value: Prisma.JsonValue): value is PaymentPreference {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, Prisma.JsonValue>;
+  const downPayment = candidate.downPayment;
+  const monthlyBudget = candidate.monthlyBudget;
+
+  const downPaymentValid =
+    downPayment === undefined || downPayment === null || typeof downPayment === 'number';
+  const monthlyBudgetValid =
+    monthlyBudget === undefined || monthlyBudget === null || typeof monthlyBudget === 'number';
+
+  return downPaymentValid && monthlyBudgetValid;
+}
+
+interface ContactDetails {
   contact?: {
     id: string;
     email?: string;
     phone?: string;
   };
+}
+
+type EmailContactMethod = ContactDetails & {
+  type: 'email';
   dealerEmail?: string;
+};
+
+type SmsContactMethod = ContactDetails & {
+  type: 'sms';
   dealerPhone?: string;
+};
+
+type SkyvernContactMethod = {
+  type: 'skyvern';
+};
+
+export type ContactMethod = 
+  | EmailContactMethod
+  | SmsContactMethod
+  | SkyvernContactMethod;
+
+type BriefWithBuyer = Prisma.BriefGetPayload<{ include: { buyer: true } }>;
+
+function parsePaymentPreferences(value: Brief['paymentPreferences']): PaymentPreference[] {
+  if (!value || !Array.isArray(value)) {
+    return [];
+  }
+
+  return (value as Prisma.JsonValue[]).filter(isPaymentPreference);
 }
 
 export class BriefAutomationOrchestrator {
@@ -75,7 +123,7 @@ export class BriefAutomationOrchestrator {
     }
   }
 
-  private async selectContactMethod(dealership: any): Promise<ContactMethod> {
+  private async selectContactMethod(dealership: Dealership): Promise<ContactMethod> {
     // 1. Check for known dealer contact
     const contact = await prisma.dealerContact.findFirst({
       where: { dealershipId: dealership.id },
@@ -113,7 +161,7 @@ export class BriefAutomationOrchestrator {
     return { type: 'skyvern' };
   }
 
-  private async contactDealer(brief: any, dealership: any): Promise<void> {
+  private async contactDealer(brief: BriefWithBuyer, dealership: Dealership): Promise<void> {
     const method = await this.selectContactMethod(dealership);
 
     switch (method.type) {
@@ -136,11 +184,17 @@ export class BriefAutomationOrchestrator {
   }
 
   private async sendEmailRequest(
-    brief: any,
-    dealership: any,
-    method: ContactMethod
+    brief: BriefWithBuyer,
+    dealership: Dealership,
+    method: EmailContactMethod
   ): Promise<void> {
-    const to = method.contact?.email || method.dealerEmail!;
+    const to = method.contact?.email ?? method.dealerEmail;
+
+    if (!to) {
+      throw new Error('Email contact method missing destination address');
+    }
+
+    const [primaryPreference] = parsePaymentPreferences(brief.paymentPreferences);
 
     const emailContent = generateQuoteRequestEmail({
       dealerName: dealership.name,
@@ -152,8 +206,8 @@ export class BriefAutomationOrchestrator {
       maxOTD: brief.maxOTD.toNumber(),
       timeline: brief.timelinePreference,
       paymentType: brief.paymentType,
-      downPayment: brief.paymentPreferences?.[0]?.downPayment,
-      monthlyBudget: brief.paymentPreferences?.[0]?.monthlyBudget,
+      downPayment: primaryPreference?.downPayment ?? undefined,
+      monthlyBudget: primaryPreference?.monthlyBudget ?? undefined,
     });
 
     const messageId = await gmailClient.sendEmail({
@@ -168,7 +222,7 @@ export class BriefAutomationOrchestrator {
       data: {
         briefId: brief.id,
         dealershipId: dealership.id,
-        contactId: method.contact?.id || null,
+        contactId: method.contact?.id ?? null,
         direction: 'outbound',
         toEmail: to,
         fromEmail: process.env.GMAIL_FROM_EMAIL || 'quotes@nmbli.com',
@@ -192,11 +246,15 @@ export class BriefAutomationOrchestrator {
   }
 
   private async sendSMSRequest(
-    brief: any,
-    dealership: any,
-    method: ContactMethod
+    brief: BriefWithBuyer,
+    dealership: Dealership,
+    method: SmsContactMethod
   ): Promise<void> {
-    const to = method.dealerPhone!;
+    const to = method.dealerPhone ?? method.contact?.phone;
+
+    if (!to) {
+      throw new Error('SMS contact method missing destination number');
+    }
 
     const message = `Hi ${dealership.name}, I'm looking for a quote on a ${brief.makes[0]} ${brief.models[0]}. Max budget: $${brief.maxOTD.toNumber()}. Can you help? Reply via nmbli.com/d/${brief.id}`;
 
@@ -229,7 +287,7 @@ export class BriefAutomationOrchestrator {
     });
   }
 
-  private async queueSkyvern(brief: any, dealership: any): Promise<void> {
+  private async queueSkyvern(brief: BriefWithBuyer, dealership: Dealership): Promise<void> {
     // Create Skyvern run record
     await prisma.skyvernRun.create({
       data: {

@@ -35,13 +35,24 @@ export class GmailClient {
   async sendEmail(params: EmailParams): Promise<string> {
     const { to, subject, htmlBody, textBody } = params;
 
+    const boundary = 'nmbli-boundary';
     const message = [
       `To: ${to}`,
       `Subject: ${subject}`,
       'MIME-Version: 1.0',
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      textBody ?? '',
+      '',
+      `--${boundary}`,
       'Content-Type: text/html; charset=utf-8',
       '',
       htmlBody,
+      '',
+      `--${boundary}--`,
     ].join('\n');
 
     const encodedMessage = Buffer.from(message)

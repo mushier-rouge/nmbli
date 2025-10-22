@@ -69,6 +69,7 @@ export async function discoverDealersForBrief(briefId: string) {
 }
 
 async function getStateFromZipcode(zipcode: string): Promise<string> {
+  void zipcode; // placeholder until real lookup is implemented
   // Simplified - in production, use a proper zip code database or API
   // For now, hardcode for testing
   return 'WA';

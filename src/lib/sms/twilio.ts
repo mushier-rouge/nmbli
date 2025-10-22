@@ -1,4 +1,6 @@
 import twilio from 'twilio';
+import type TwilioRestClient from 'twilio/lib/rest/Twilio';
+import type { MessageInstance } from 'twilio/lib/rest/api/v2010/account/message';
 
 const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -10,14 +12,14 @@ export interface SMSParams {
 }
 
 export class TwilioClient {
-  private client: any;
+  private client: TwilioRestClient | null;
 
   constructor() {
     // Lazy initialization - only create client when needed
     this.client = null;
   }
 
-  private getClient() {
+  private getClient(): TwilioRestClient {
     if (!this.client) {
       if (!ACCOUNT_SID || !AUTH_TOKEN) {
         throw new Error('Twilio credentials not configured');
@@ -44,7 +46,7 @@ export class TwilioClient {
     return message.sid;
   }
 
-  async getMessageStatus(messageSid: string) {
+  async getMessageStatus(messageSid: string): Promise<MessageInstance> {
     const client = this.getClient();
     return client.messages(messageSid).fetch();
   }

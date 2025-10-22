@@ -20,7 +20,7 @@ export const dealerContactSchema = z.object({
   phone: z.string().optional(),
   role: z.enum(['sales', 'manager', 'internet_sales', 'other']).default('sales'),
   preferred_contact_method: z.enum(['email', 'sms', 'phone']).default('email'),
-  notes: z.record(z.unknown()).optional(),
+  notes: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type DealerContact = z.infer<typeof dealerContactSchema>;
