@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { listLatestBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { formatPaymentSummary } from '@/lib/utils/payment';
+import { formatCurrency } from '@/lib/utils/number';
 
 export const dynamic = 'force-dynamic';
 

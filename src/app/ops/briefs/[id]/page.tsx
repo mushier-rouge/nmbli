@@ -11,6 +11,7 @@ import { getSessionContext } from '@/lib/auth/session';
 import { getBriefDetail } from '@/lib/services/briefs';
 import { listDealers } from '@/lib/services/dealers';
 import { formatPaymentSummary as formatPaymentSummaries } from '@/lib/utils/payment';
+import { formatCurrency } from '@/lib/utils/number';
 import { getQuoteStatusLabel, getQuoteStatusVariant } from '@/lib/constants/status';
 
 export const dynamic = 'force-dynamic';

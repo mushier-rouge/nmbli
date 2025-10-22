@@ -8,6 +8,7 @@ import { listBuyerBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
 import { formatPaymentSummary } from '@/lib/utils/payment';
+import { formatCurrency } from '@/lib/utils/number';
 
 export const dynamic = 'force-dynamic';
 
