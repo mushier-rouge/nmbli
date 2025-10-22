@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { UserRole } from '@/generated/prisma';
 import { debugAuth } from '@/lib/debug';
+
+const serializeError = (error: unknown): string => {
+  if (error instanceof Error) {
+    const propertyNames = new Set([...Object.getOwnPropertyNames(error), 'name', 'message', 'stack']);
+    return JSON.stringify(error, Array.from(propertyNames), 2);
+  }
+
+  try {
+    return JSON.stringify(error, null, 2);
+  } catch {
+    return String(error);
+  }
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,21 +70,24 @@ export async function POST(request: NextRequest) {
       });
 
       debugAuth('complete', 'User upserted successfully');
-    } catch (dbError) {
+    } catch (dbError: unknown) {
+      const knownRequestError = dbError instanceof Prisma.PrismaClientKnownRequestError ? dbError : undefined;
+      const errorInstance = dbError instanceof Error ? dbError : undefined;
+
       // Log the full error object with all details
-      console.error('Database upsert failed - Full error:', JSON.stringify(dbError, Object.getOwnPropertyNames(dbError), 2));
-      console.error('Database upsert failed - Error name:', (dbError as any)?.name);
-      console.error('Database upsert failed - Error message:', (dbError as any)?.message);
-      console.error('Database upsert failed - Error code:', (dbError as any)?.code);
-      console.error('Database upsert failed - Error meta:', (dbError as any)?.meta);
+      console.error('Database upsert failed - Full error:', serializeError(dbError));
+      console.error('Database upsert failed - Error name:', errorInstance?.name);
+      console.error('Database upsert failed - Error message:', errorInstance?.message);
+      console.error('Database upsert failed - Error code:', knownRequestError?.code);
+      console.error('Database upsert failed - Error meta:', knownRequestError?.meta);
 
       debugAuth('complete', 'Database error', {
-        error: dbError instanceof Error ? dbError.message : String(dbError),
-        code: (dbError as any)?.code,
-        meta: (dbError as any)?.meta,
+        error: errorInstance ? errorInstance.message : String(dbError),
+        code: knownRequestError?.code,
+        meta: knownRequestError?.meta,
       });
 
-      const errorMessage = dbError instanceof Error ? dbError.message : 'Database error during user creation';
+      const errorMessage = errorInstance ? errorInstance.message : 'Database error during user creation';
       return NextResponse.json({ message: errorMessage }, { status: 500 });
     }
 
