@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 
+// Force rebuild
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
