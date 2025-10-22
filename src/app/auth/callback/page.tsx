@@ -29,28 +29,47 @@ export default function AuthCallbackPage() {
       try {
         if (accessToken && refreshToken) {
           debugAuth('callback-client', 'Setting session via access token');
-          const { error: setSessionError } = await supabase.auth.setSession({
+          const { error: setSessionError, data } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           if (setSessionError) {
+            console.error('setSession error:', setSessionError);
             throw new Error(setSessionError.message);
           }
+          console.log('Session set successfully, user:', data.user?.email);
+
+          // Wait a moment for cookies to be set
+          await new Promise(resolve => setTimeout(resolve, 100));
         } else {
           const authCode = tokenHash ?? codeFromSearch ?? codeFromHash;
           if (!authCode) {
             throw new Error('Magic link is missing a token. Try requesting a new link.');
           }
           debugAuth('callback-client', 'Exchanging auth code', { authCode });
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(authCode);
+          const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
           if (exchangeError) {
+            console.error('exchangeCodeForSession error:', exchangeError);
             throw new Error(exchangeError.message);
           }
+          console.log('Code exchange successful, user:', data.user?.email);
+
+          // Wait a moment for cookies to be set
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
+
+        // Verify session is actually available
+        const { data: { session: verifySession }, error: verifyError } = await supabase.auth.getSession();
+        if (verifyError || !verifySession) {
+          console.error('Session verification failed:', verifyError);
+          throw new Error('Session was not established properly. Please try again.');
+        }
+        console.log('Session verified, calling /api/auth/complete');
 
         const response = await fetch('/api/auth/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin', // Ensure cookies are sent
         });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
@@ -59,6 +78,7 @@ export default function AuthCallbackPage() {
           throw new Error(errorMsg);
         }
 
+        console.log('Auth complete successful, redirecting to:', next);
         router.replace(next.startsWith('/') ? next : `/${next}`);
       } catch (err) {
         console.error('Auth callback failed', err);
