@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 export default function CheckEmailPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 text-center">
