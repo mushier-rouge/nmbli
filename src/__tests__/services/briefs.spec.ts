@@ -79,7 +79,12 @@ describe('Brief Services', () => {
         zipcode: '  90210  ',
       };
 
-      vi.mocked(prisma.brief.create).mockResolvedValue({} as any);
+      const mockBrief = {
+        id: 'brief-123',
+        maxOTD: { toString: () => '50000' },
+      };
+
+      vi.mocked(prisma.brief.create).mockResolvedValue(mockBrief as any);
 
       await createBrief({
         buyerId: mockBuyerId,
@@ -106,7 +111,12 @@ describe('Brief Services', () => {
         timelinePreference: 'asap',
       };
 
-      vi.mocked(prisma.brief.create).mockResolvedValue({} as any);
+      const mockBrief = {
+        id: 'brief-123',
+        maxOTD: { toString: () => '50000' },
+      };
+
+      vi.mocked(prisma.brief.create).mockResolvedValue(mockBrief as any);
 
       await createBrief({
         buyerId: mockBuyerId,

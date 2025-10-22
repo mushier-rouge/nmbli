@@ -307,9 +307,9 @@ export function BriefForm() {
           makes={form.watch('makes')}
           models={form.watch('models')}
           trims={form.watch('trims') || []}
-          onMakesChange={(makes) => form.setValue('makes', makes)}
-          onModelsChange={(models) => form.setValue('models', models)}
-          onTrimsChange={(trims) => form.setValue('trims', trims)}
+          onMakesChange={(makes) => form.setValue('makes', makes, { shouldValidate: true })}
+          onModelsChange={(models) => form.setValue('models', models, { shouldValidate: true })}
+          onTrimsChange={(trims) => form.setValue('trims', trims, { shouldValidate: false })}
         />
         {form.formState.errors.makes && (
           <p className="text-sm text-destructive">{form.formState.errors.makes.message}</p>
