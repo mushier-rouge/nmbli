@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 type SessionSummary = {
-  role: 'buyer' | 'dealer' | 'ops';
   email: string;
 };
 
@@ -15,15 +14,9 @@ interface RootNavProps {
   session: SessionSummary | null;
 }
 
-const NAV_LINKS: Record<SessionSummary['role'], Array<{ href: string; label: string }>> = {
-  buyer: [
-    { href: '/briefs', label: 'Briefs' },
-  ],
-  dealer: [],
-  ops: [
-    { href: '/ops', label: 'Dashboard' },
-  ],
-};
+const NAV_LINKS = [
+  { href: '/briefs', label: 'Briefs' },
+];
 
 export function RootNav({ session }: RootNavProps) {
   const pathname = usePathname();
@@ -37,8 +30,6 @@ export function RootNav({ session }: RootNavProps) {
     });
   }
 
-  const links = session ? NAV_LINKS[session.role] ?? [] : [];
-
   return (
     <header className="border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 text-sm">
@@ -47,7 +38,7 @@ export function RootNav({ session }: RootNavProps) {
         </Link>
         {session ? (
           <div className="flex items-center gap-4">
-            {links.map((link) => (
+            {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

@@ -11,13 +11,5 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  if (session.role === 'ops') {
-    redirect('/ops');
-  }
-
-  if (session.role === 'dealer') {
-    redirect('/dealer');
-  }
-
   redirect('/briefs');
 }
