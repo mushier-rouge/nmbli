@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
@@ -18,6 +18,17 @@ const serializeError = (error: unknown): string => {
   } catch {
     return String(error);
   }
+};
+
+const isPrismaKnownRequestError = (
+  error: unknown,
+): error is Prisma.PrismaClientKnownRequestError => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: unknown; clientVersion?: unknown };
+  return typeof candidate.code === 'string' && typeof candidate.clientVersion === 'string';
 };
 
 export async function POST(request: NextRequest) {
@@ -71,7 +82,7 @@ export async function POST(request: NextRequest) {
 
       debugAuth('complete', 'User upserted successfully');
     } catch (dbError: unknown) {
-      const knownRequestError = dbError instanceof Prisma.PrismaClientKnownRequestError ? dbError : undefined;
+      const knownRequestError = isPrismaKnownRequestError(dbError) ? dbError : undefined;
       const errorInstance = dbError instanceof Error ? dbError : undefined;
 
       // Log the full error object with all details
