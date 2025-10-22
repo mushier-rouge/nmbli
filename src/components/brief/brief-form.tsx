@@ -15,13 +15,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { VehicleSelector } from '@/components/brief/vehicle-selector';
 
 const formSchema = z.object({
   zipcode: z.string().min(5).max(10),
   maxOTD: z.number().positive(),
-  makes: z.string().min(1),
-  models: z.string().min(1),
-  trims: z.string().optional(),
+  makes: z.array(z.string()).min(1, 'Select at least one make'),
+  models: z.array(z.string()).min(1, 'Select at least one model'),
+  trims: z.array(z.string()).optional(),
   colors: z.string().optional(),
   mustHaves: z.string().optional(),
   timelinePreference: z.string().min(3),
@@ -67,9 +68,9 @@ export function BriefForm() {
     defaultValues: {
       zipcode: '',
       maxOTD: 45000,
-      makes: '',
-      models: '',
-      trims: '',
+      makes: [],
+      models: [],
+      trims: [],
       colors: '',
       mustHaves: '',
       timelinePreference: 'Ready to purchase within 30 days',
@@ -164,9 +165,9 @@ export function BriefForm() {
         paymentPreferences: preferences,
         paymentType: preferences[0]?.type,
         maxOTD: values.maxOTD,
-        makes: splitList(values.makes),
-        models: splitList(values.models),
-        trims: splitList(values.trims),
+        makes: values.makes,
+        models: values.models,
+        trims: values.trims || [],
         colors: splitList(values.colors),
         mustHaves: splitList(values.mustHaves),
         timelinePreference: values.timelinePreference.trim(),
@@ -302,49 +303,22 @@ export function BriefForm() {
           {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="makes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Makes</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Toyota, Honda" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="models"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Models</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Grand Highlander, Pilot" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <VehicleSelector
+          makes={form.watch('makes')}
+          models={form.watch('models')}
+          trims={form.watch('trims') || []}
+          onMakesChange={(makes) => form.setValue('makes', makes)}
+          onModelsChange={(models) => form.setValue('models', models)}
+          onTrimsChange={(trims) => form.setValue('trims', trims)}
+        />
+        {form.formState.errors.makes && (
+          <p className="text-sm text-destructive">{form.formState.errors.makes.message}</p>
+        )}
+        {form.formState.errors.models && (
+          <p className="text-sm text-destructive">{form.formState.errors.models.message}</p>
+        )}
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <FormField
-            control={form.control}
-            name="trims"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Preferred trims</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Limited, Touring" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="colors"
