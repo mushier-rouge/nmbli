@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -12,8 +12,15 @@ export default function AuthCallbackPage() {
   const [error, setError] = useState<string | null>(null);
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const searchParamsKey = searchParams?.toString() ?? '';
+  const hasCompletedRef = useRef(false);
 
   useEffect(() => {
+    if (hasCompletedRef.current) {
+      return;
+    }
+
+    hasCompletedRef.current = true;
+
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
     const search = new URLSearchParams(searchParamsKey);
@@ -87,8 +94,7 @@ export default function AuthCallbackPage() {
     }
 
     void completeAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, searchParams, router]);
+  }, [supabase, searchParamsKey, router]);
 
   if (error) {
     return (
