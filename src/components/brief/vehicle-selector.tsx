@@ -24,7 +24,6 @@ export function VehicleSelector({
   onModelsChange,
   onTrimsChange,
 }: VehicleSelectorProps) {
-  const CACHE_BUST = '2025-01-10-fix'; // Force new chunk hash
   const [showMakeDropdown, setShowMakeDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showTrimDropdown, setShowTrimDropdown] = useState(false);
@@ -113,7 +112,7 @@ export function VehicleSelector({
   const removeTrim = (trim: string) => toggleTrim(trim);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-v="2">
       {/* Makes Selector */}
       <div className="space-y-2" ref={makeRef}>
         <label className="text-sm font-medium">Makes</label>
