@@ -152,7 +152,7 @@ export function VehicleSelector({
                 key={make}
                 className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
               >
-                {make}
+                {String(make)}
                 <X
                   className="h-3 w-3 cursor-pointer hover:text-destructive"
                   onClick={() => removeMake(make)}
@@ -207,7 +207,7 @@ export function VehicleSelector({
                 key={model}
                 className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
               >
-                {model}
+                {String(model)}
                 <X
                   className="h-3 w-3 cursor-pointer hover:text-destructive"
                   onClick={() => removeModel(model)}
@@ -262,7 +262,7 @@ export function VehicleSelector({
                 key={trim}
                 className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
               >
-                {trim}
+                {String(trim)}
                 <X
                   className="h-3 w-3 cursor-pointer hover:text-destructive"
                   onClick={() => removeTrim(trim)}
