@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
+
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 interface SupabaseContextValue {
@@ -16,6 +17,17 @@ interface SupabaseProviderProps {
   children: React.ReactNode;
 }
 
+function sessionsEqual(a: Session | null, b: Session | null) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.access_token === b.access_token &&
+    a.refresh_token === b.refresh_token &&
+    a.expires_at === b.expires_at &&
+    a.user?.id === b.user?.id
+  );
+}
+
 export function SupabaseProvider({ initialSession, children }: SupabaseProviderProps) {
   const sessionRef = useRef<Session | null>(initialSession);
   const client = useMemo(() => getSupabaseBrowserClient(), []);
@@ -24,53 +36,57 @@ export function SupabaseProvider({ initialSession, children }: SupabaseProviderP
     sessionRef.current = initialSession;
   }, [initialSession]);
 
+  const logDebug = useMemo(
+    () =>
+      (message: string, payload?: Record<string, unknown>) => {
+        try {
+          console.warn(`[SupabaseProvider] ${message}`, payload ?? {});
+        } catch {
+          console.warn(`[SupabaseProvider] ${message}`);
+        }
+      },
+    []
+  );
+
   const subscribe = useMemo(
     () =>
       (onStoreChange: () => void) => {
         const {
           data: { subscription },
         } = client.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('[DEBUG][SupabaseProvider] auth state change', {
-              event: _event,
-              hasSession: Boolean(nextSession),
-              sessionEmail: nextSession?.user?.email,
-              timestamp: new Date().toISOString(),
-            });
-          }
-          const currentToken = sessionRef.current?.access_token ?? null;
-          const nextToken = nextSession?.access_token ?? null;
-          if (currentToken === nextToken && sessionRef.current === nextSession) {
-            if (process.env.NODE_ENV !== 'production') {
-              console.log('[DEBUG][SupabaseProvider] auth state change skipped (no session delta)');
-            }
+          logDebug('auth state change', {
+            event: _event,
+            currentAccessToken: sessionRef.current?.access_token,
+            nextAccessToken: nextSession?.access_token,
+            currentExpiresAt: sessionRef.current?.expires_at,
+            nextExpiresAt: nextSession?.expires_at,
+          });
+
+          if (sessionsEqual(sessionRef.current, nextSession)) {
+            logDebug('auth state change skipped (same session snapshot)');
             return;
           }
+
           sessionRef.current = nextSession;
           onStoreChange();
         });
 
         return () => {
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('[DEBUG][SupabaseProvider] unsubscribing auth state listener');
-          }
+          logDebug('unsubscribing auth state listener');
           subscription.unsubscribe();
         };
       },
-    [client]
+    [client, logDebug]
   );
 
   const getSnapshot = () => sessionRef.current;
   const session = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[DEBUG][SupabaseProvider] render', {
-      hasInitialSession: Boolean(initialSession),
-      hasStateSession: Boolean(session),
-      stateSessionEmail: session?.user?.email,
-      timestamp: new Date().toISOString(),
-    });
-  }
+  logDebug('render', {
+    hasInitialSession: Boolean(initialSession),
+    hasStateSession: Boolean(session),
+    stateSessionEmail: session?.user?.email,
+  });
 
   return (
     <SupabaseContext.Provider
