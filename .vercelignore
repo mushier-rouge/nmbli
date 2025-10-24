@@ -1,4 +1,5 @@
 src/__tests__/
 tests/
+scripts/
 **/*.test.ts
 **/*.spec.ts
