@@ -54,7 +54,7 @@ export default async function RootLayout({
 }>) {
   const session = await getInitialSession();
   const navSession = session?.user
-    ? { role: (session.user.user_metadata?.role as 'buyer' | 'dealer' | 'ops' | undefined) ?? 'buyer', email: session.user.email ?? '' }
+    ? { email: session.user.email ?? '' }
     : null;
 
   return (
