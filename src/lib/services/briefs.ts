@@ -82,6 +82,7 @@ export async function getBriefDetail(briefId: string) {
 }
 
 export async function listBuyerBriefs(buyerId: string) {
+  console.log('[DEBUG][listBuyerBriefs] query start', { buyerId, timestamp: new Date().toISOString() });
   return prisma.brief.findMany({
     where: { buyerId },
     orderBy: { createdAt: 'desc' },

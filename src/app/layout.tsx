@@ -62,12 +62,23 @@ export default async function RootLayout({
       role: session.user.user_metadata?.role,
       roleType: typeof session.user.user_metadata?.role,
       roleIsObject: typeof session.user.user_metadata?.role === 'object',
+      timestamp: new Date().toISOString(),
+    });
+  } else {
+    console.log('[DEBUG] No session user found for RootLayout render', {
+      timestamp: new Date().toISOString(),
     });
   }
 
   const navSession = session?.user
     ? { email: session.user.email ?? '' }
     : null;
+
+  console.log('[DEBUG] RootLayout nav session state', {
+    hasNavSession: Boolean(navSession),
+    email: navSession?.email,
+    timestamp: new Date().toISOString(),
+  });
 
   return (
     <html lang="en" className="h-full">

@@ -23,8 +23,19 @@ export function RootNav({ session }: RootNavProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DEBUG][RootNav] render', {
+      pathname,
+      hasSession: Boolean(session),
+      sessionEmail: session?.email,
+      isPending,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   async function handleSignOut() {
     startTransition(async () => {
+      console.log('[DEBUG][RootNav] sign out start', { timestamp: new Date().toISOString() });
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/login');
     });

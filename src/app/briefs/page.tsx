@@ -14,7 +14,14 @@ import { formatCurrency } from '@/lib/utils/number';
 export const revalidate = 60;
 
 export default async function BriefsPage() {
+  console.log('[DEBUG][BriefsPage] render start', { timestamp: new Date().toISOString() });
   const session = await getSessionContext();
+  console.log('[DEBUG][BriefsPage] session fetched', {
+    hasSession: Boolean(session),
+    role: session?.role,
+    userId: session?.userId,
+    timestamp: new Date().toISOString(),
+  });
   if (!session || session.role !== 'buyer') {
     return (
       <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 px-4 text-center">
@@ -28,11 +35,21 @@ export default async function BriefsPage() {
   }
 
   const requireInvite = shouldRequireInviteCode();
+  console.log('[DEBUG][BriefsPage] invite requirement', {
+    requireInvite,
+    hasInviteAccess: hasInviteAccess(session.metadata ?? {}),
+    timestamp: new Date().toISOString(),
+  });
   if (requireInvite && !hasInviteAccess(session.metadata ?? {})) {
     redirect('/invite-code?next=/briefs');
   }
 
   const briefs = await listBuyerBriefs(session.userId);
+  console.log('[DEBUG][BriefsPage] briefs loaded', {
+    briefsCount: briefs.length,
+    briefIds: briefs.map((brief) => brief.id),
+    timestamp: new Date().toISOString(),
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-4 py-10">

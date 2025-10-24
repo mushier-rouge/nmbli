@@ -14,18 +14,28 @@ export interface SessionContext {
 
 export const getSessionContext = cache(async (): Promise<SessionContext | null> => {
   try {
+    console.log('[DEBUG][getSessionContext] start', { timestamp: new Date().toISOString() });
     const supabase = await getSupabaseServerClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
     if (!session || !session.user) {
+      console.log('[DEBUG][getSessionContext] no session returned', { timestamp: new Date().toISOString() });
       return null;
     }
 
     const role = (session.user.user_metadata?.role as UserRole | undefined) ?? 'buyer';
     const cookieStore = await cookies();
     const impersonatedDealerId = cookieStore.get('impersonateDealerId')?.value ?? null;
+
+    console.log('[DEBUG][getSessionContext] session resolved', {
+      userId: session.user.id,
+      email: session.user.email,
+      role,
+      impersonatedDealerId,
+      timestamp: new Date().toISOString(),
+    });
 
     return {
       userId: session.user.id,

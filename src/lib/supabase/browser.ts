@@ -5,6 +5,9 @@ let client: SupabaseClient | null = null;
 
 export function getSupabaseBrowserClient() {
   if (client) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[DEBUG][getSupabaseBrowserClient] reuse existing client', { timestamp: new Date().toISOString() });
+    }
     return client;
   }
 
@@ -16,5 +19,8 @@ export function getSupabaseBrowserClient() {
   }
 
   client = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DEBUG][getSupabaseBrowserClient] created new client', { timestamp: new Date().toISOString() });
+  }
   return client;
 }

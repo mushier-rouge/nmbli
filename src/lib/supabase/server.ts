@@ -19,6 +19,7 @@ const warnOnce = (() => {
 })();
 
 export async function getSupabaseServerClient(): Promise<SupabaseClient> {
+  console.log('[DEBUG][getSupabaseServerClient] creating client', { timestamp: new Date().toISOString() });
   const cookieStore = await cookies();
 
   const supabaseUrl =
@@ -30,13 +31,21 @@ export async function getSupabaseServerClient(): Promise<SupabaseClient> {
     throw new Error('Missing Supabase env vars for server client');
   }
 
+  console.log('[DEBUG][getSupabaseServerClient] env present', {
+    hasSupabaseUrl: Boolean(supabaseUrl),
+    hasAnonKey: Boolean(supabaseAnonKey),
+    timestamp: new Date().toISOString(),
+  });
+
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
+        console.log('[DEBUG][getSupabaseServerClient] cookies.get', { name, timestamp: new Date().toISOString() });
         return cookieStore.get(name)?.value;
       },
       set(name: string, value: string, options: CookieOptions) {
         try {
+          console.log('[DEBUG][getSupabaseServerClient] cookies.set', { name, hasValue: Boolean(value), timestamp: new Date().toISOString() });
           cookieStore.set({ name, value, ...options });
         } catch (error) {
           warnOnce('set', error);
@@ -44,6 +53,7 @@ export async function getSupabaseServerClient(): Promise<SupabaseClient> {
       },
       remove(name: string, options: CookieOptions) {
         try {
+          console.log('[DEBUG][getSupabaseServerClient] cookies.remove', { name, timestamp: new Date().toISOString() });
           cookieStore.set({ name, value: '', ...options });
         } catch (error) {
           warnOnce('remove', error);

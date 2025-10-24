@@ -20,14 +20,36 @@ export function SupabaseProvider({ initialSession, children }: SupabaseProviderP
   const [session, setSession] = useState<Session | null>(initialSession);
   const client = useMemo(() => getSupabaseBrowserClient(), []);
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[DEBUG][SupabaseProvider] render', {
+      hasInitialSession: Boolean(initialSession),
+      hasStateSession: Boolean(session),
+      stateSessionEmail: session?.user?.email,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   useEffect(() => {
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[DEBUG][SupabaseProvider] auth state change', {
+          event: _event,
+          hasSession: Boolean(nextSession),
+          sessionEmail: nextSession?.user?.email,
+          timestamp: new Date().toISOString(),
+        });
+      }
       setSession(nextSession);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[DEBUG][SupabaseProvider] unsubscribing auth state listener');
+      }
+      subscription.unsubscribe();
+    };
   }, [client]);
 
   return (
