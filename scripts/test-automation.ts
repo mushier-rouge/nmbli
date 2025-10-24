@@ -20,13 +20,7 @@ async function main() {
   console.log('🚀 Starting automation test with real API keys...\n');
 
   // Dynamic imports after env is loaded
-  const prismaModule = await import('../src/lib/prisma');
-  console.log('Prisma module:', Object.keys(prismaModule));
-  const { prisma } = prismaModule;
-  console.log('Prisma client:', typeof prisma, prisma ? 'defined' : 'undefined');
-  console.log('Prisma has buyer?:', 'buyer' in prisma, typeof prisma.buyer);
-  console.log('Prisma properties:', Object.keys(prisma).slice(0, 10));
-
+  const { prisma } = await import('../src/lib/prisma');
   const { findDealersInState } = await import('../src/lib/api/gemini');
   const { discoverDealersForBrief } = await import('../src/lib/services/dealer-discovery');
   const { briefAutomation } = await import('../src/lib/services/brief-automation');
