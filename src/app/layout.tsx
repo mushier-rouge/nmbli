@@ -53,6 +53,18 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getInitialSession();
+
+  // Debug logging to find React Error #185 root cause
+  if (session?.user) {
+    console.log('[DEBUG] Session user:', {
+      email: session.user.email,
+      metadata: session.user.user_metadata,
+      role: session.user.user_metadata?.role,
+      roleType: typeof session.user.user_metadata?.role,
+      roleIsObject: typeof session.user.user_metadata?.role === 'object',
+    });
+  }
+
   const navSession = session?.user
     ? { email: session.user.email ?? '' }
     : null;
