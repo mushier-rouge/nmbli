@@ -50,15 +50,15 @@ export function VehicleSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const allMakes = getAllMakes();
-  const availableModels = makes.length > 0 ? getModelsForMakes(makes) : [];
+  const allMakes = getAllMakes().filter((make): make is string => typeof make === 'string');
+  const availableModels = makes.length > 0 ? getModelsForMakes(makes).filter((model): model is string => typeof model === 'string') : [];
 
   // Get available trims for selected makes/models
   const availableTrims = Array.from(
     new Set(
       makes.flatMap((make) =>
         vehicles[make]?.flatMap((modelData) =>
-          models.includes(modelData.model) ? modelData.trims : []
+          models.includes(modelData.model) ? modelData.trims.filter((trim): trim is string => typeof trim === 'string') : []
         ) || []
       )
     )
