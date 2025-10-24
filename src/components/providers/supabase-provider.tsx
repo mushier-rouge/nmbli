@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthChangeEvent, Session, SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -19,6 +19,7 @@ interface SupabaseProviderProps {
 export function SupabaseProvider({ initialSession, children }: SupabaseProviderProps) {
   const [session, setSession] = useState<Session | null>(initialSession);
   const client = useMemo(() => getSupabaseBrowserClient(), []);
+  const lastAccessTokenRef = useRef<string | null>(initialSession?.access_token ?? null);
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[DEBUG][SupabaseProvider] render', {
@@ -41,6 +42,14 @@ export function SupabaseProvider({ initialSession, children }: SupabaseProviderP
           timestamp: new Date().toISOString(),
         });
       }
+      const nextAccessToken = nextSession?.access_token ?? null;
+      if (lastAccessTokenRef.current === nextAccessToken) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[DEBUG][SupabaseProvider] auth state change skipped (same access token)');
+        }
+        return;
+      }
+      lastAccessTokenRef.current = nextAccessToken;
       setSession(nextSession);
     });
 
