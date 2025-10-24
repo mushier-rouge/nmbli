@@ -24,6 +24,7 @@ export function VehicleSelector({
   onModelsChange,
   onTrimsChange,
 }: VehicleSelectorProps) {
+  // Force rebuild to clear Vercel cache
   const [showMakeDropdown, setShowMakeDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showTrimDropdown, setShowTrimDropdown] = useState(false);
