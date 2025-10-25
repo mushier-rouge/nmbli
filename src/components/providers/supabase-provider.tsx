@@ -36,34 +36,13 @@ export function SupabaseProvider({ initialSession, children }: SupabaseProviderP
     sessionRef.current = initialSession;
   }, [initialSession]);
 
-  const logDebug = useMemo(
-    () =>
-      (message: string, payload?: Record<string, unknown>) => {
-        try {
-          console.warn(`[SupabaseProvider] ${message}`, payload ?? {});
-        } catch {
-          console.warn(`[SupabaseProvider] ${message}`);
-        }
-      },
-    []
-  );
-
   const subscribe = useMemo(
     () =>
       (onStoreChange: () => void) => {
         const {
           data: { subscription },
         } = client.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
-          logDebug('auth state change', {
-            event: _event,
-            currentAccessToken: sessionRef.current?.access_token,
-            nextAccessToken: nextSession?.access_token,
-            currentExpiresAt: sessionRef.current?.expires_at,
-            nextExpiresAt: nextSession?.expires_at,
-          });
-
           if (sessionsEqual(sessionRef.current, nextSession)) {
-            logDebug('auth state change skipped (same session snapshot)');
             return;
           }
 
@@ -72,21 +51,14 @@ export function SupabaseProvider({ initialSession, children }: SupabaseProviderP
         });
 
         return () => {
-          logDebug('unsubscribing auth state listener');
           subscription.unsubscribe();
         };
       },
-    [client, logDebug]
+    [client]
   );
 
   const getSnapshot = () => sessionRef.current;
   const session = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  logDebug('render', {
-    hasInitialSession: Boolean(initialSession),
-    hasStateSession: Boolean(session),
-    stateSessionEmail: session?.user?.email,
-  });
 
   return (
     <SupabaseContext.Provider
