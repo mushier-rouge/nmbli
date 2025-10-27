@@ -6,6 +6,7 @@ import { SupabaseProvider } from '@/components/providers/supabase-provider';
 import { SonnerProvider } from '@/components/providers/sonner-provider';
 import { OpsImpersonationBanner } from '@/components/ops/ops-impersonation-banner';
 import { RootNav } from '@/components/navigation/root-nav';
+import { ErrorBoundaryDebug } from '@/components/debug/error-boundary-debug';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 
@@ -61,14 +62,16 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={cn(geistSans.variable, geistMono.variable, 'min-h-full bg-background font-sans antialiased')}>
-        <OpsImpersonationBanner />
-        <RootNav session={navSession} />
-        <SupabaseProvider initialSession={session}>
-          <Suspense fallback={null}>
-            <SonnerProvider />
-          </Suspense>
-          {children}
-        </SupabaseProvider>
+        <ErrorBoundaryDebug>
+          <OpsImpersonationBanner />
+          <RootNav session={navSession} />
+          <SupabaseProvider initialSession={session}>
+            <Suspense fallback={null}>
+              <SonnerProvider />
+            </Suspense>
+            {children}
+          </SupabaseProvider>
+        </ErrorBoundaryDebug>
       </body>
     </html>
   );
