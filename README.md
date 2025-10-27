@@ -126,7 +126,7 @@ src/
 - Deploy the Next.js app (Vercel is recommended). Set `NEXT_PUBLIC_*` and secrets as project environment variables.
 - Provision a managed Postgres (Supabase recommended). Run `prisma migrate deploy` followed by `npm run db:seed` for staging/demo data.
 - Configure Supabase Storage bucket (default `nmbli`) and grant the service role key.
-- Resend (or your transactional provider) must allow sending from `ops@mail.nmbli.com` (or your chosen sender) or update the sender in `src/lib/services/email.ts`.
+- Resend (or your transactional provider) must allow sending from `contact@nmbli.com` (or your chosen sender) or update the sender in `src/lib/services/email.ts`.
 - Redis/BullMQ is optional. If you skip it, ensure contract checks are triggered manually from the ops UI.
 
 ## Git & CI Tips

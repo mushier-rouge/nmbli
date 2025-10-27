@@ -41,7 +41,7 @@ export default async function DealerPortalPage({ params }: { params: Promise<{ t
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>Include doc fees, DMV, add-ons, incentives, and upload the signed buyer order. We&apos;ll normalize everything for the buyer.</p>
           <p>
-            Need help? Email <Link href="mailto:ops@nmbli.app" className="text-primary underline">ops@nmbli.app</Link>.
+            Need help? Email <Link href="mailto:contact@nmbli.com" className="text-primary underline">contact@nmbli.com</Link>.
           </p>
         </CardContent>
       </Card>

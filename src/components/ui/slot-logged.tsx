@@ -5,6 +5,8 @@ import { Slot as OriginalSlot } from "@radix-ui/react-slot"
 
 type SlotProps = React.ComponentProps<typeof OriginalSlot>
 
+const debugSlots = process.env.NEXT_PUBLIC_DEBUG_SLOTS === 'true'
+
 function getElementTypeName(element: React.ReactElement): string {
   if (typeof element.type === "string") {
     return element.type
@@ -64,6 +66,10 @@ function serializeChild(child: React.ReactNode): string {
 }
 
 export function Slot({ children, ...props }: SlotProps) {
+  if (!debugSlots) {
+    return <OriginalSlot {...props}>{children}</OriginalSlot>
+  }
+
   const serializedChildren = serializeChild(children)
 
   console.log("[SLOT RENDER]", {

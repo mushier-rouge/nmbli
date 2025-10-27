@@ -14,7 +14,7 @@ export default function LoginPage() {
         <LoginForm />
       </Suspense>
       <p className="mt-6 text-xs text-muted-foreground">
-        Need help? <Link href="mailto:ops@nmbli.app" className="text-primary underline">Contact support</Link>
+        Need help? <Link href="mailto:contact@nmbli.com" className="text-primary underline">Contact support</Link>
       </p>
     </main>
   );

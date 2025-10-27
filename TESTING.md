@@ -129,7 +129,7 @@ GEMINI_API_KEY=your_key_here
 GMAIL_CLIENT_ID=your_client_id
 GMAIL_CLIENT_SECRET=your_client_secret
 GMAIL_REFRESH_TOKEN=your_refresh_token
-GMAIL_FROM_EMAIL=quotes@nmbli.com
+GMAIL_FROM_EMAIL=contact@nmbli.com
 
 # Twilio (for SMS automation)
 TWILIO_ACCOUNT_SID=your_sid

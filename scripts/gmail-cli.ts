@@ -22,8 +22,8 @@ async function getClient() {
     keyfilePath: credentialsPath,
   })) as OAuth2Client;
 
-  google.options({ auth: authClient as unknown as any });
-  return google.gmail({ version: 'v1', auth: authClient as unknown as any });
+  google.options({ auth: authClient });
+  return google.gmail({ version: 'v1', auth: authClient });
 }
 
 function buildRawMessage({ from, to, subject, text }: { from: string; to: string; subject: string; text: string }) {
@@ -42,7 +42,7 @@ function buildRawMessage({ from, to, subject, text }: { from: string; to: string
 async function sendMessage(to: string, subject: string, text: string) {
   const gmail = await getClient();
   const raw = buildRawMessage({
-    from: 'Nmbli Concierge <contact@nmbli.com>',
+    from: 'nmbli <contact@nmbli.com>',
     to,
     subject,
     text,

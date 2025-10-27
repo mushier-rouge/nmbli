@@ -8,7 +8,7 @@ process.env.GEMINI_API_KEY = 'test-gemini-api-key';
 process.env.GMAIL_CLIENT_ID = 'test-gmail-client-id';
 process.env.GMAIL_CLIENT_SECRET = 'test-gmail-client-secret';
 process.env.GMAIL_REFRESH_TOKEN = 'test-gmail-refresh-token';
-process.env.GMAIL_FROM_EMAIL = 'quotes@nmbli.com';
+process.env.GMAIL_FROM_EMAIL = 'contact@nmbli.com';
 
 // Twilio
 process.env.TWILIO_ACCOUNT_SID = 'test-twilio-account-sid';

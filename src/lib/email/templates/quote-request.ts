@@ -132,7 +132,7 @@ export function generateQuoteRequestEmail(data: QuoteRequestData): { subject: st
 
       <p><strong>Why Nmbli?</strong> We're helping car buyers collect transparent, itemized quotes from multiple dealers so they can make informed decisions. This is a serious buyer actively comparing quotes.</p>
 
-      <a href="mailto:${process.env.GMAIL_FROM_EMAIL || 'quotes@nmbli.com'}" class="cta-button">Reply with Your Quote</a>
+      <a href="mailto:${process.env.GMAIL_FROM_EMAIL || 'contact@nmbli.com'}" class="cta-button">Reply with Your Quote</a>
 
       <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
         Thank you,<br>

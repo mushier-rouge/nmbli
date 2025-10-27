@@ -58,7 +58,7 @@ describe('Brief Automation Orchestrator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     orchestrator = new BriefAutomationOrchestrator();
-    process.env.GMAIL_FROM_EMAIL = 'quotes@nmbli.com';
+    process.env.GMAIL_FROM_EMAIL = 'contact@nmbli.com';
     process.env.TWILIO_PHONE_NUMBER = '+15551234567';
   });
 

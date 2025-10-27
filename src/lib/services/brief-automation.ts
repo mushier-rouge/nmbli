@@ -225,7 +225,7 @@ export class BriefAutomationOrchestrator {
         contactId: method.contact?.id ?? null,
         direction: 'outbound',
         toEmail: to,
-        fromEmail: process.env.GMAIL_FROM_EMAIL || 'quotes@nmbli.com',
+        fromEmail: process.env.GMAIL_FROM_EMAIL || 'contact@nmbli.com',
         subject: emailContent.subject,
         bodyHtml: emailContent.html,
         status: 'sent',
