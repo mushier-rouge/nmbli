@@ -1,38 +1,30 @@
 import { createServerClient as createSupabaseServerClient, type CookieOptions } from '@supabase/ssr';
 
+type CookieSetter = (name: string, value: string, options: CookieOptions) => unknown;
+type CookieRemover = (name: string, options: CookieOptions) => unknown;
+
 type CookieStore = {
   get: (name: string) => { value?: string } | undefined;
-  set?: (...args: any[]) => any;
-  delete?: (...args: any[]) => any;
+  set?: CookieSetter;
+  delete?: CookieRemover;
 };
 
 function setCookie(cookieStore: CookieStore, name: string, value: string, options: CookieOptions) {
-  if (!cookieStore.set) {
-    return;
-  }
-
   try {
-    cookieStore.set({ name, value, ...options });
+    cookieStore.set?.(name, value, options);
   } catch (error) {
-    try {
-      cookieStore.set(name, value, options);
-    } catch (secondError) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('[supabase][server-client] failed to set cookie', { name, error, secondError });
-      }
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[supabase][server-client] failed to set cookie', { name, error });
     }
   }
 }
 
 function removeCookie(cookieStore: CookieStore, name: string, options: CookieOptions) {
-  if (cookieStore.delete) {
-    try {
-      cookieStore.delete(name, options);
-      return;
-    } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn('[supabase][server-client] failed to delete cookie', { name, error });
-      }
+  try {
+    cookieStore.delete?.(name, options);
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[supabase][server-client] failed to delete cookie', { name, error });
     }
   }
 
