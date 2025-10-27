@@ -1,7 +1,7 @@
 import { createServerClient as createSupabaseServerClient, type CookieOptions } from '@supabase/ssr';
 
-type CookieSetter = (name: string, value: string, options: CookieOptions) => unknown;
-type CookieRemover = (name: string, options: CookieOptions) => unknown;
+type CookieSetter = (name: string, value: string, options?: CookieOptions) => unknown;
+type CookieRemover = (name: string, options?: CookieOptions) => unknown;
 
 type CookieStore = {
   get: (name: string) => { value?: string } | undefined;
