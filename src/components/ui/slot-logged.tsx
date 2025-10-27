@@ -11,7 +11,8 @@ function getElementTypeName(element: React.ReactElement): string {
   }
 
   if (typeof element.type === "function") {
-    return element.type.displayName ?? element.type.name ?? "anonymous"
+    const component = element.type as React.ComponentType<unknown>
+    return component.displayName ?? component.name ?? "anonymous"
   }
 
   if (typeof element.type === "object" && element.type !== null) {
