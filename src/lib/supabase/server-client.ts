@@ -2,8 +2,8 @@ import { createServerClient as createSupabaseServerClient, type CookieOptions } 
 
 type CookieStore = {
   get: (name: string) => { value?: string } | undefined;
-  set?: ((...args: unknown[]) => unknown) | undefined;
-  delete?: ((...args: unknown[]) => unknown) | undefined;
+  set?: (...args: any[]) => any;
+  delete?: (...args: any[]) => any;
 };
 
 function setCookie(cookieStore: CookieStore, name: string, value: string, options: CookieOptions) {
