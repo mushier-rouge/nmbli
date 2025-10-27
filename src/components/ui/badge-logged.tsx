@@ -3,7 +3,12 @@
 import * as React from "react"
 import { Badge as OriginalBadge } from "./badge"
 
+const debugUi = process.env.NEXT_PUBLIC_DEBUG_UI === 'true'
+
 export function Badge({ children, ...props }: React.ComponentProps<typeof OriginalBadge>) {
+  if (!debugUi) {
+    return <OriginalBadge {...props}>{children}</OriginalBadge>
+  }
   const serializedChildren = React.isValidElement(children) ? 'ReactElement' :
     typeof children === 'object' && children !== null ? JSON.stringify(children, null, 2) :
     String(children);
