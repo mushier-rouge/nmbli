@@ -50,15 +50,25 @@ export function VehicleSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const allMakes = getAllMakes().filter((make): make is string => typeof make === 'string');
-  const availableModels = makes.length > 0 ? getModelsForMakes(makes).filter((model): model is string => typeof model === 'string') : [];
+  const allMakes = getAllMakes()
+    .filter((make): make is string => typeof make === 'string' && make != null)
+    .map(make => String(make));
+  const availableModels = makes.length > 0
+    ? getModelsForMakes(makes)
+        .filter((model): model is string => typeof model === 'string' && model != null)
+        .map(model => String(model))
+    : [];
 
   // Get available trims for selected makes/models
   const availableTrims = Array.from(
     new Set(
       makes.flatMap((make) =>
         vehicles[make]?.flatMap((modelData) =>
-          models.includes(modelData.model) ? modelData.trims.filter((trim): trim is string => typeof trim === 'string') : []
+          models.includes(modelData.model)
+            ? modelData.trims
+                .filter((trim): trim is string => typeof trim === 'string' && trim != null)
+                .map(trim => String(trim))
+            : []
         ) || []
       )
     )
@@ -147,18 +157,23 @@ export function VehicleSelector({
         </div>
         {makes.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {makes.map((make) => (
-              <div
-                key={make}
-                className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
-              >
-                {String(make)}
-                <X
-                  className="h-3 w-3 cursor-pointer hover:text-destructive"
-                  onClick={() => removeMake(make)}
-                />
-              </div>
-            ))}
+            {makes
+              .filter(make => make != null && make !== '')
+              .map((make) => {
+                const makeStr = String(make);
+                return (
+                  <div
+                    key={makeStr}
+                    className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
+                  >
+                    <span>{makeStr}</span>
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => removeMake(make)}
+                    />
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>
@@ -202,18 +217,23 @@ export function VehicleSelector({
         </div>
         {models.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {models.map((model) => (
-              <div
-                key={model}
-                className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
-              >
-                {String(model)}
-                <X
-                  className="h-3 w-3 cursor-pointer hover:text-destructive"
-                  onClick={() => removeModel(model)}
-                />
-              </div>
-            ))}
+            {models
+              .filter(model => model != null && model !== '')
+              .map((model) => {
+                const modelStr = String(model);
+                return (
+                  <div
+                    key={modelStr}
+                    className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
+                  >
+                    <span>{modelStr}</span>
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => removeModel(model)}
+                    />
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>
@@ -257,18 +277,23 @@ export function VehicleSelector({
         </div>
         {trims.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {trims.map((trim) => (
-              <div
-                key={trim}
-                className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
-              >
-                {String(trim)}
-                <X
-                  className="h-3 w-3 cursor-pointer hover:text-destructive"
-                  onClick={() => removeTrim(trim)}
-                />
-              </div>
-            ))}
+            {trims
+              .filter(trim => trim != null && trim !== '')
+              .map((trim) => {
+                const trimStr = String(trim);
+                return (
+                  <div
+                    key={trimStr}
+                    className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
+                  >
+                    <span>{trimStr}</span>
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                      onClick={() => removeTrim(trim)}
+                    />
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>
