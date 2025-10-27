@@ -1,6 +1,10 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { User } from '@supabase/supabase-js';
+
+import { prisma } from '@/lib/prisma';
+import type { UserRole } from '@/generated/prisma';
 
 import { createServerClient } from '@/lib/supabase/server-client';
 
@@ -8,6 +12,52 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+function resolveRole(metadata: Record<string, unknown> | null | undefined): UserRole {
+  const rawRole = (metadata?.role as string | undefined) ?? 'buyer';
+  if (rawRole === 'buyer' || rawRole === 'dealer' || rawRole === 'ops') {
+    return rawRole;
+  }
+  return 'buyer';
+}
+
+async function syncUserRecord(user: User) {
+  const email = user.email ?? 'unknown@example.com';
+  const role = resolveRole(user.user_metadata);
+  const name = (user.user_metadata?.full_name as string | undefined) ?? email.split('@')[0];
+
+  await prisma.user.upsert({
+    where: { email },
+    update: {
+      id: user.id,
+      role,
+      name,
+    },
+    create: {
+      id: user.id,
+      email,
+      role,
+      name,
+    },
+  });
+}
+
+async function ensureRoleMetadata(user: User, supabase: ReturnType<typeof createServerClient>) {
+  if (user.user_metadata?.role) {
+    return;
+  }
+
+  const role = resolveRole(user.user_metadata);
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      role,
+    },
+  });
+
+  if (error) {
+    console.warn('[auth][password-login] Failed to persist role metadata', error.message);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -26,9 +76,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: error.message }, { status: 401 });
     }
 
-    if (!data.session) {
+    if (!data.session || !data.session.user) {
       return NextResponse.json({ message: 'No session created' }, { status: 401 });
     }
+
+    await syncUserRecord(data.session.user);
+    await ensureRoleMetadata(data.session.user, supabase);
 
     return NextResponse.json({ success: true });
   } catch (error) {

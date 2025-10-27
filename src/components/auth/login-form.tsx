@@ -22,6 +22,11 @@ const passwordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+const automationEmail = process.env.NEXT_PUBLIC_AUTOMATION_TEST_USER_EMAIL;
+const automationPassword = process.env.NEXT_PUBLIC_AUTOMATION_TEST_USER_PASSWORD;
+const showAutomationHelper =
+  process.env.NODE_ENV !== 'production' && Boolean(automationEmail && automationPassword);
+
 export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -112,7 +117,7 @@ export function LoginForm() {
         <Tabs defaultValue="magic-link" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
-            <TabsTrigger value="password">Password</TabsTrigger>
+            <TabsTrigger value="password">Email &amp; Password</TabsTrigger>
           </TabsList>
 
           <TabsContent value="magic-link">
@@ -175,6 +180,18 @@ export function LoginForm() {
                 </Button>
               </form>
             </Form>
+            {showAutomationHelper ? (
+              <div className="mt-4 rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Automation test user</p>
+                <p className="mt-1">
+                  Use these credentials when running local automation or Playwright flows:
+                </p>
+                <div className="mt-2 space-y-1 font-mono text-[11px]">
+                  <p>Email: {automationEmail}</p>
+                  <p>Password: {automationPassword}</p>
+                </div>
+              </div>
+            ) : null}
           </TabsContent>
         </Tabs>
       </CardContent>

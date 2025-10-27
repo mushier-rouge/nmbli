@@ -57,6 +57,13 @@ Seed development data (1 buyer, 1 ops user, 3 dealers, sample brief + quote):
 npm run db:seed
 ```
 
+#### Automation test account
+
+- Define `AUTOMATION_TEST_USER_EMAIL` and `AUTOMATION_TEST_USER_PASSWORD` in `.env.local` (the seed script falls back to `automation@nmbli.app` / `Automation!123` if unspecified).
+- Expose the same values to the client by mirroring them to `NEXT_PUBLIC_AUTOMATION_TEST_USER_EMAIL` / `NEXT_PUBLIC_AUTOMATION_TEST_USER_PASSWORD` when you want the login screen to surface dev-only helper text.
+- Ensure `SUPABASE_SERVICE_ROLE_KEY` is available before running `npm run db:seed`; the script uses it to create/update the automation user inside Supabase Auth and mirrors the record in Prisma.
+- During local automation (e.g. Playwright) choose the **Email & Password** tab on `/login` and authenticate with the automation credentials.
+
 ### 4. Run the dev server
 
 ```bash
