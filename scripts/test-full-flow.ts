@@ -45,7 +45,7 @@ async function main() {
 
     console.log('3️⃣  Filling credentials...');
     await page.locator('input[type="email"]').first().fill('automation2@nmbli.com');
-    await page.locator('input[type="password"]').first().fill('password123');
+    await page.locator('input[type="password"]').first().fill('hE0fp6keXcnITdPAsoHZ!Aa9');
     await page.waitForTimeout(500);
     console.log('✅ Credentials entered\n');
 

@@ -5,6 +5,7 @@ import { ChevronsUpDown, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getAllMakes, getModelsForMakes, vehicles } from '@/lib/data/vehicles';
 
 type VehicleSelectorProps = {
@@ -76,18 +77,15 @@ export function VehicleSelector({
 
   const toggleMake = (make: string) => {
     console.log('[VehicleSelector] toggleMake START', { make, currentMakes: makes, type: typeof make });
-    const newMakes = makes.includes(make)
-      ? makes.filter((m) => m !== make)
-      : [...makes, make];
+    // Only allow selecting one make at a time - if clicking the same make, deselect it
+    const newMakes = makes.includes(make) ? [] : [make];
     console.log('[VehicleSelector] toggleMake calling onMakesChange', { newMakes });
     onMakesChange(newMakes);
     console.log('[VehicleSelector] toggleMake END');
 
-    // Clear models and trims that are no longer available
-    const newAvailableModels = getModelsForMakes(newMakes);
-    const filteredModels = models.filter((m) => newAvailableModels.includes(m));
-    if (filteredModels.length !== models.length) {
-      onModelsChange(filteredModels);
+    // Clear models and trims when changing makes
+    if (newMakes.length === 0 || newMakes[0] !== makes[0]) {
+      onModelsChange([]);
       onTrimsChange([]);
     }
   };
@@ -142,9 +140,9 @@ export function VehicleSelector({
 
   return (
     <div className="space-y-4" data-v="2">
-      {/* Makes Selector */}
+      {/* Make Selector */}
       <div className="space-y-2" ref={makeRef}>
-        <label className="text-sm font-medium">Makes</label>
+        <label className="text-sm font-medium">Make</label>
         <div className="relative">
           <Button
             type="button"
@@ -154,28 +152,24 @@ export function VehicleSelector({
             className="w-full justify-between"
             onClick={() => setShowMakeDropdown(!showMakeDropdown)}
           >
-            {makes.length > 0 ? `${makes.length} selected` : 'Select makes...'}
+            {makes.length > 0 ? makes[0] : 'Select make...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
           {showMakeDropdown && (
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
-              <div className="p-2 space-y-1">
-                {allMakes.map((make) => (
-                  <label
-                    key={make}
-                    className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={makes.includes(make)}
-                      onCheckedChange={(checked) => {
-                        console.log('[VehicleSelector] Checkbox onCheckedChange', { make, checked, currentMakes: makes });
-                        toggleMake(make);
-                      }}
-                    />
-                    <span className="text-sm">{make}</span>
-                  </label>
-                ))}
-              </div>
+              <RadioGroup value={makes[0] || ''} onValueChange={toggleMake}>
+                <div className="p-2 space-y-1">
+                  {allMakes.map((make) => (
+                    <label
+                      key={make}
+                      className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
+                    >
+                      <RadioGroupItem value={make} id={`make-${make}`} />
+                      <span className="text-sm">{make}</span>
+                    </label>
+                  ))}
+                </div>
+              </RadioGroup>
             </div>
           )}
         </div>

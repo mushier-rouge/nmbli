@@ -31,7 +31,7 @@ async function ensureAutomation2User() {
   });
 
   const email = 'automation2@nmbli.app';
-  const password = 'Automation!123';
+  const password = 'hE0fp6keXcnITdPAsoHZ!Aa9';
 
   const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 100 });
   const existingUser = userList?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());

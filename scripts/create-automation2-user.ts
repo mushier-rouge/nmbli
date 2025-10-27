@@ -22,8 +22,8 @@ async function main() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const email = 'automation2@nmbli.com';
-  const password = 'password123';
+  const email = 'automation2@nmbli.app';
+  const password = 'hE0fp6keXcnITdPAsoHZ!Aa9';
 
   console.log(`\nAttempting to create user: ${email}`);
 
