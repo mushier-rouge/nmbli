@@ -14,6 +14,7 @@
     "test:automation": "tsx scripts/test-automation.ts",
     "test:gemini": "tsx scripts/test-gemini.ts",
     "test:automation:api": "tsx scripts/test-automation-api.ts",
+    "test:debug-briefs": "tsx scripts/debug-briefs-error.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
