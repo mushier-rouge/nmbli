@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from "react"
 import { Card as OriginalCard, CardHeader as OriginalCardHeader, CardTitle as OriginalCardTitle, CardContent as OriginalCardContent, CardFooter as OriginalCardFooter } from "./card"
 
@@ -22,11 +24,22 @@ export function CardHeader({ children, ...props }: React.ComponentProps<typeof O
 }
 
 export function CardTitle({ children, ...props }: React.ComponentProps<typeof OriginalCardTitle>) {
-  console.log('[CARD TITLE RENDER]', { children, childrenType: typeof children, isValidElement: React.isValidElement(children) });
+  const serializedChildren = React.isValidElement(children) ? 'ReactElement' :
+    typeof children === 'object' && children !== null ? JSON.stringify(children, null, 2) :
+    String(children);
+  console.log('[CARD TITLE RENDER]', {
+    children: serializedChildren,
+    childrenType: typeof children,
+    isValidElement: React.isValidElement(children),
+    isArray: Array.isArray(children),
+    isNull: children === null,
+    isUndefined: children === undefined
+  });
   try {
     return <OriginalCardTitle {...props}>{children}</OriginalCardTitle>;
   } catch (e) {
     console.error('[CARD TITLE ERROR]', e);
+    console.error('[CARD TITLE ERROR CHILDREN]', serializedChildren);
     throw e;
   }
 }

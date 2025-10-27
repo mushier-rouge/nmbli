@@ -1,24 +1,23 @@
 'use client'
 
 import * as React from "react"
-import { Button as OriginalButton } from "./button"
+import Link from "next/link"
 
-export function Button({ children, ...props }: React.ComponentProps<typeof OriginalButton>) {
+export function LoggedLink({ children, ...props }: React.ComponentProps<typeof Link>) {
   const serializedChildren = React.isValidElement(children) ? 'ReactElement' :
     typeof children === 'object' && children !== null ? JSON.stringify(children, null, 2) :
     String(children);
-  console.log('[BUTTON RENDER]', {
+  console.log('[LINK RENDER]', {
     children: serializedChildren,
     childrenType: typeof children,
     isValidElement: React.isValidElement(children),
-    asChild: props.asChild,
-    variant: props.variant
+    href: props.href
   });
   try {
-    return <OriginalButton {...props}>{children}</OriginalButton>;
+    return <Link {...props}>{children}</Link>;
   } catch (e) {
-    console.error('[BUTTON ERROR]', e);
-    console.error('[BUTTON ERROR CHILDREN]', serializedChildren);
+    console.error('[LINK ERROR]', e);
+    console.error('[LINK ERROR CHILDREN]', serializedChildren);
     throw e;
   }
 }

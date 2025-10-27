@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { LoggedLink as Link } from '@/components/ui/link-logged';
 import { Button } from '@/components/ui/button-logged';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card-logged';
 import { Badge } from '@/components/ui/badge-logged';
