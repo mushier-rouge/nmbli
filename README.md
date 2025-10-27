@@ -1,6 +1,6 @@
-# OutTheDoor MVP
+# nmbli MVP
 
-OutTheDoor is a mobile-first PWA that helps car buyers collect itemized out-the-door (OTD) quotes, compare them side-by-side, negotiate with guided counters, and guard the contract signing process. Dealers get a lightweight portal for structured submissions, while the ops team can invite stores, normalize email-ingested quotes, and monitor contract guardrails.
+nmbli is a mobile-first PWA that helps car buyers collect itemized out-the-door (OTD) quotes, compare them side-by-side, negotiate with guided counters, and guard the contract signing process. Dealers get a lightweight portal for structured submissions, while the ops team can invite stores, normalize email-ingested quotes, and monitor contract guardrails.
 
 ## Tech Stack
 
@@ -30,11 +30,11 @@ Key variables:
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Base URL of the deployed app (e.g. `https://outthedoor.app`) |
+| `NEXT_PUBLIC_APP_URL` | Base URL of the deployed app (e.g. `https://nmbli.com`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key for browser SDK |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key for server-side storage + admin ops |
-| `SUPABASE_STORAGE_BUCKET` | Storage bucket name (default: `outthedoor`) |
+| `SUPABASE_STORAGE_BUCKET` | Storage bucket name (default: `nmbli`) |
 | `DATABASE_URL` | Postgres connection string used by Prisma |
 | `EMAIL_API_KEY` | Resend API key for transactional email (optional in dev) |
 | `DOCUSIGN_*` | Placeholder for DocuSign integration (not yet wired) |
@@ -125,8 +125,8 @@ src/
 
 - Deploy the Next.js app (Vercel is recommended). Set `NEXT_PUBLIC_*` and secrets as project environment variables.
 - Provision a managed Postgres (Supabase recommended). Run `prisma migrate deploy` followed by `npm run db:seed` for staging/demo data.
-- Configure Supabase Storage bucket (default `outthedoor`) and grant the service role key.
-- Resend (or your transactional provider) must allow sending from `ops@mail.outthedoor.app` or update the sender in `src/lib/services/email.ts`.
+- Configure Supabase Storage bucket (default `nmbli`) and grant the service role key.
+- Resend (or your transactional provider) must allow sending from `ops@mail.nmbli.com` (or your chosen sender) or update the sender in `src/lib/services/email.ts`.
 - Redis/BullMQ is optional. If you skip it, ensure contract checks are triggered manually from the ops UI.
 
 ## Git & CI Tips

@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { getSupabaseServiceClient } from '@/lib/supabase/service';
 
-const DEFAULT_BUCKET = 'outthedoor';
+const DEFAULT_BUCKET = 'nmbli';
 
 async function performUpload({
   key,

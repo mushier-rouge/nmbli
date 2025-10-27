@@ -1,6 +1,6 @@
-# OutTheDoor MVP — Build Instructions for a Coding LLM
+# nmbli MVP — Build Instructions for a Coding LLM
 
-You are a senior full‑stack engineer. Build a **mobile‑first web app (PWA)** called **OutTheDoor** that helps buyers collect **itemized out‑the‑door (OTD) quotes** from car dealers, compare them, send simple counters, and block e‑signing if the final contract doesn’t match the accepted quote. Include a **dealer mini‑portal** for submitting/updating quotes and uploading PDFs. Optimize for fast MVP delivery, reliability, and a calm, transparent UI.
+You are a senior full‑stack engineer. Build a **mobile‑first web app (PWA)** called **nmbli** that helps buyers collect **itemized out‑the‑door (OTD) quotes** from car dealers, compare them, send simple counters, and block e‑signing if the final contract doesn’t match the accepted quote. Include a **dealer mini‑portal** for submitting/updating quotes and uploading PDFs. Optimize for fast MVP delivery, reliability, and a calm, transparent UI.
 
 ---
 

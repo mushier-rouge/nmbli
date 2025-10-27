@@ -10,7 +10,7 @@ export default function OfflinePage() {
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">You&apos;re offline</h1>
         <p className="text-muted-foreground">
-          OutTheDoor needs a connection to fetch live quotes. Reconnect to get back to the latest offers.
+          nmbli needs a connection to fetch live quotes. Reconnect to get back to the latest offers.
         </p>
       </div>
       <Link href="/" className="text-sm font-medium text-primary underline">
