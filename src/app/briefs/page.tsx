@@ -65,7 +65,8 @@ export default async function BriefsPage() {
 
       <section className="grid gap-4 sm:grid-cols-2">
         {briefs.map((brief) => {
-          console.log('[BRIEFS PAGE RENDER]', {
+          // Always log to server regardless of DEBUG_UI
+          console.log('[SERVER][BRIEFS PAGE RENDER]', {
             briefId: brief.id,
             makes: brief.makes,
             makesType: typeof brief.makes,
