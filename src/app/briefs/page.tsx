@@ -64,7 +64,21 @@ export default async function BriefsPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        {briefs.map((brief) => (
+        {briefs.map((brief) => {
+          console.log('[BRIEFS PAGE RENDER]', {
+            briefId: brief.id,
+            makes: brief.makes,
+            makesType: typeof brief.makes,
+            makesIsArray: Array.isArray(brief.makes),
+            models: brief.models,
+            modelsType: typeof brief.models,
+            status: brief.status,
+            statusType: typeof brief.status,
+            paymentPreferences: brief.paymentPreferences,
+            paymentPrefType: typeof brief.paymentPreferences,
+          });
+
+          return (
           <Card key={brief.id} className="flex h-full flex-col justify-between">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -73,7 +87,9 @@ export default async function BriefsPage() {
                     {(() => {
                       const makes = Array.isArray(brief.makes) ? brief.makes.filter(m => m != null).map(m => String(m)).join(', ') : '';
                       const models = Array.isArray(brief.models) ? brief.models.filter(m => m != null).map(m => String(m)).join(', ') : '';
-                      return `${makes} ${models}`.trim();
+                      const result = `${makes} ${models}`.trim();
+                      console.log('[CARD TITLE]', { makes, models, result, resultType: typeof result });
+                      return result;
                     })()}
                   </span>
                 </CardTitle>
@@ -88,16 +104,32 @@ export default async function BriefsPage() {
                 <p className="text-sm font-medium">Payment preferences</p>
                 {(() => {
                   const paymentSummaries = formatPaymentSummary(brief.paymentPreferences, brief.paymentType);
+                  console.log('[PAYMENT SUMMARIES]', {
+                    briefId: brief.id,
+                    paymentSummaries,
+                    isArray: Array.isArray(paymentSummaries),
+                    length: paymentSummaries.length,
+                    types: paymentSummaries.map(s => typeof s),
+                  });
                   if (paymentSummaries.length === 0) {
                     return <p className="text-sm text-muted-foreground">Not specified</p>;
                   }
                   return (
                     <ul className="text-sm text-muted-foreground">
                       {paymentSummaries
-                        .filter((summary) => summary != null && typeof summary === 'string')
-                        .map((summary, index) => (
-                          <li key={`${brief.id}-payment-${index}`}><span>{String(summary)}</span></li>
-                        ))}
+                        .filter((summary) => {
+                          const isValid = summary != null && typeof summary === 'string';
+                          if (!isValid) {
+                            console.error('[INVALID PAYMENT SUMMARY]', { summary, type: typeof summary });
+                          }
+                          return isValid;
+                        })
+                        .map((summary, index) => {
+                          console.log('[RENDERING PAYMENT]', { index, summary, type: typeof summary });
+                          return (
+                            <li key={`${brief.id}-payment-${index}`}><span>{String(summary)}</span></li>
+                          );
+                        })}
                     </ul>
                   );
                 })()}
@@ -113,7 +145,8 @@ export default async function BriefsPage() {
               </Button>
             </CardFooter>
           </Card>
-        ))}
+          );
+        })}
         {briefs.length === 0 && (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center gap-3 py-10 text-center">
