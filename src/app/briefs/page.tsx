@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button-logged';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card-logged';
+import { Badge } from '@/components/ui/badge-logged';
 import { listBuyerBriefs } from '@/lib/services/briefs';
 import { getSessionContext } from '@/lib/auth/session';
 import { hasInviteAccess, shouldRequireInviteCode } from '@/lib/invite/config';
