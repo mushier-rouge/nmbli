@@ -226,18 +226,16 @@ export function VehicleSelector({
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
               <div className="p-2 space-y-1">
                 {availableModels.map((model) => (
-                  <div
+                  <label
                     key={model}
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleModel(model);
-                    }}
                   >
-                    <Checkbox checked={models.includes(model)} />
+                    <Checkbox
+                      checked={models.includes(model)}
+                      onCheckedChange={() => toggleModel(model)}
+                    />
                     <span className="text-sm">{model}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
@@ -294,18 +292,16 @@ export function VehicleSelector({
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
               <div className="p-2 space-y-1">
                 {availableTrims.map((trim) => (
-                  <div
+                  <label
                     key={trim}
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleTrim(trim);
-                    }}
                   >
-                    <Checkbox checked={trims.includes(trim)} />
+                    <Checkbox
+                      checked={trims.includes(trim)}
+                      onCheckedChange={() => toggleTrim(trim)}
+                    />
                     <span className="text-sm">{trim}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
