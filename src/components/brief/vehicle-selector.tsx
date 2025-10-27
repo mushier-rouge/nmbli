@@ -75,10 +75,13 @@ export function VehicleSelector({
   ).sort();
 
   const toggleMake = (make: string) => {
+    console.log('[VehicleSelector] toggleMake START', { make, currentMakes: makes, type: typeof make });
     const newMakes = makes.includes(make)
       ? makes.filter((m) => m !== make)
       : [...makes, make];
+    console.log('[VehicleSelector] toggleMake calling onMakesChange', { newMakes });
     onMakesChange(newMakes);
+    console.log('[VehicleSelector] toggleMake END');
 
     // Clear models and trims that are no longer available
     const newAvailableModels = getModelsForMakes(newMakes);
@@ -117,9 +120,25 @@ export function VehicleSelector({
     );
   };
 
-  const removeMake = (make: string) => toggleMake(make);
-  const removeModel = (model: string) => toggleModel(model);
-  const removeTrim = (trim: string) => toggleTrim(trim);
+  const removeMake = (make: string) => {
+    console.log('[VehicleSelector] removeMake called', { make, type: typeof make });
+    toggleMake(make);
+  };
+  const removeModel = (model: string) => {
+    console.log('[VehicleSelector] removeModel called', { model, type: typeof model });
+    toggleModel(model);
+  };
+  const removeTrim = (trim: string) => {
+    console.log('[VehicleSelector] removeTrim called', { trim, type: typeof trim });
+    toggleTrim(trim);
+  };
+
+  console.log('[VehicleSelector] RENDER', {
+    makes,
+    makesType: makes.map(m => ({ value: m, type: typeof m })),
+    models,
+    trims
+  });
 
   return (
     <div className="space-y-4" data-v="2">
@@ -142,14 +161,19 @@ export function VehicleSelector({
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
               <div className="p-2 space-y-1">
                 {allMakes.map((make) => (
-                  <div
+                  <label
                     key={make}
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={() => toggleMake(make)}
                   >
-                    <Checkbox checked={makes.includes(make)} />
+                    <Checkbox
+                      checked={makes.includes(make)}
+                      onCheckedChange={(checked) => {
+                        console.log('[VehicleSelector] Checkbox onCheckedChange', { make, checked, currentMakes: makes });
+                        toggleMake(make);
+                      }}
+                    />
                     <span className="text-sm">{make}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
@@ -160,7 +184,9 @@ export function VehicleSelector({
             {makes
               .filter(make => make != null && make !== '')
               .map((make) => {
+                console.log('[VehicleSelector] Rendering make chip', { make, type: typeof make, stringValue: String(make) });
                 const makeStr = String(make);
+                console.log('[VehicleSelector] makeStr created', { makeStr, type: typeof makeStr });
                 return (
                   <div
                     key={makeStr}
@@ -171,6 +197,7 @@ export function VehicleSelector({
                       type="button"
                       onClick={() => removeMake(make)}
                       className="inline-flex items-center hover:text-destructive"
+                      aria-label={`Remove ${makeStr}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -208,7 +235,11 @@ export function VehicleSelector({
                   <div
                     key={model}
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={() => toggleModel(model)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleModel(model);
+                    }}
                   >
                     <Checkbox checked={models.includes(model)} />
                     <span className="text-sm">{model}</span>
@@ -234,6 +265,7 @@ export function VehicleSelector({
                       type="button"
                       onClick={() => removeModel(model)}
                       className="inline-flex items-center hover:text-destructive"
+                      aria-label={`Remove ${modelStr}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -271,7 +303,11 @@ export function VehicleSelector({
                   <div
                     key={trim}
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={() => toggleTrim(trim)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleTrim(trim);
+                    }}
                   >
                     <Checkbox checked={trims.includes(trim)} />
                     <span className="text-sm">{trim}</span>
@@ -297,6 +333,7 @@ export function VehicleSelector({
                       type="button"
                       onClick={() => removeTrim(trim)}
                       className="inline-flex items-center hover:text-destructive"
+                      aria-label={`Remove ${trimStr}`}
                     >
                       <X className="h-3 w-3" />
                     </button>

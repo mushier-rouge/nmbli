@@ -17,6 +17,61 @@ const automationUserPassword =
   'Automation!123';
 const automationUserName = process.env.AUTOMATION_TEST_USER_NAME ?? 'Automation Test Buyer';
 
+async function ensureAutomation2User() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.warn('⚠️  Skipping automation2 user creation');
+    return null;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const email = 'automation2@nmbli.app';
+  const password = 'Automation!123';
+
+  const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 100 });
+  const existingUser = userList?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
+  let userId = existingUser?.id;
+
+  if (!userId) {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { role: 'buyer', full_name: 'Automation2 Buyer' },
+    });
+
+    if (error) {
+      console.error('❌ Failed to create automation2:', error.message);
+      return null;
+    }
+
+    userId = data.user.id;
+    console.log(`✅ automation2 created: ${email}`);
+  } else {
+    await supabase.auth.admin.updateUserById(userId, {
+      password,
+      user_metadata: { role: 'buyer', full_name: 'Automation2 Buyer' },
+    });
+    console.log(`ℹ️  automation2 updated: ${email}`);
+  }
+
+  if (!userId) return null;
+
+  await prisma.user.upsert({
+    where: { email },
+    update: { id: userId, role: 'buyer', name: 'Automation2 Buyer' },
+    create: { id: userId, email, role: 'buyer', name: 'Automation2 Buyer' },
+  });
+
+  return userId;
+}
+
 async function ensureAutomationTestUser() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -125,12 +180,24 @@ async function main() {
     },
   });
 
+  const automation2 = await prisma.user.upsert({
+    where: { email: 'automation2@nmbli.app' },
+    update: { role: 'buyer' },
+    create: {
+      email: 'automation2@nmbli.app',
+      name: 'Automation2 Buyer',
+      role: 'buyer',
+    },
+  });
+
   console.log('✅ Created test users:', {
     buyer: testBuyer.email,
     ops: testOps.email,
+    automation2: automation2.email,
   });
 
   const automationUserId = await ensureAutomationTestUser();
+  const automation2UserId = await ensureAutomation2User();
 
   // Create test briefs for automation user
   if (automationUserId) {
