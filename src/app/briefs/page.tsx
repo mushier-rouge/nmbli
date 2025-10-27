@@ -69,10 +69,16 @@ export default async function BriefsPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold">
-                  {Array.isArray(brief.makes) ? brief.makes.filter(m => m != null).map(m => String(m)).join(', ') : ''} {Array.isArray(brief.models) ? brief.models.filter(m => m != null).map(m => String(m)).join(', ') : ''}
+                  <span>
+                    {(() => {
+                      const makes = Array.isArray(brief.makes) ? brief.makes.filter(m => m != null).map(m => String(m)).join(', ') : '';
+                      const models = Array.isArray(brief.models) ? brief.models.filter(m => m != null).map(m => String(m)).join(', ') : '';
+                      return `${makes} ${models}`.trim();
+                    })()}
+                  </span>
                 </CardTitle>
                 <Badge variant="outline" className="capitalize">
-                  {String(brief.status)}
+                  <span>{String(brief.status)}</span>
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">ZIP {String(brief.zipcode)} · Max OTD {formatCurrency(brief.maxOTD.toNumber())}</p>
@@ -87,9 +93,11 @@ export default async function BriefsPage() {
                   }
                   return (
                     <ul className="text-sm text-muted-foreground">
-                      {paymentSummaries.map((summary) => (
-                        <li key={summary}>{summary}</li>
-                      ))}
+                      {paymentSummaries
+                        .filter((summary) => summary != null && typeof summary === 'string')
+                        .map((summary, index) => (
+                          <li key={`${brief.id}-payment-${index}`}><span>{String(summary)}</span></li>
+                        ))}
                     </ul>
                   );
                 })()}
