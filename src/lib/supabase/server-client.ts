@@ -31,7 +31,8 @@ function removeCookie(cookieStore: CookieStore, name: string, options: CookieOpt
   setCookie(cookieStore, name, '', { ...options, maxAge: 0 });
 }
 
-export function createServerClient(cookieStore: CookieStore) {
+export function createServerClient(cookieStoreInput: unknown) {
+  const cookieStore = cookieStoreInput as CookieStore;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
