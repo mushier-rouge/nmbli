@@ -68,12 +68,14 @@ export default async function BriefsPage() {
           <Card key={brief.id} className="flex h-full flex-col justify-between">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">{brief.makes.map(String).join(', ')} {brief.models.map(String).join(', ')}</CardTitle>
+                <CardTitle className="text-lg font-semibold">
+                  {Array.isArray(brief.makes) ? brief.makes.filter(m => m != null).map(m => String(m)).join(', ') : ''} {Array.isArray(brief.models) ? brief.models.filter(m => m != null).map(m => String(m)).join(', ') : ''}
+                </CardTitle>
                 <Badge variant="outline" className="capitalize">
-                  {brief.status}
+                  {String(brief.status)}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">ZIP {brief.zipcode} · Max OTD {formatCurrency(brief.maxOTD.toNumber())}</p>
+              <p className="text-sm text-muted-foreground">ZIP {String(brief.zipcode)} · Max OTD {formatCurrency(brief.maxOTD.toNumber())}</p>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="space-y-1">
@@ -92,8 +94,8 @@ export default async function BriefsPage() {
                   );
                 })()}
               </div>
-              {brief.mustHaves.length > 0 && (
-                <p className="text-sm text-muted-foreground">Must-haves: {brief.mustHaves.map(String).join(', ')}</p>
+              {Array.isArray(brief.mustHaves) && brief.mustHaves.length > 0 && (
+                <p className="text-sm text-muted-foreground">Must-haves: {brief.mustHaves.filter(m => m != null).map(m => String(m)).join(', ')}</p>
               )}
               <p className="text-xs text-muted-foreground">Last updated {new Date(brief.updatedAt).toLocaleDateString()}</p>
             </CardContent>
