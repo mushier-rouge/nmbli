@@ -14,8 +14,9 @@ import { chromium } from 'playwright';
 const SITE_URL = process.env.SITE_URL || 'https://nmbli.com';
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || process.env.AUTOMATION_TEST_USER_EMAIL;
 const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || process.env.AUTOMATION_TEST_USER_PASSWORD;
+const isLocalhost = SITE_URL.includes('localhost');
 
-if (!TEST_USER_EMAIL) {
+if (!TEST_USER_EMAIL && !isLocalhost) {
   console.error('ERROR: TEST_USER_EMAIL environment variable is required');
   console.error('Example: TEST_USER_EMAIL=your@email.com TEST_USER_PASSWORD=yourpass npm run test:debug-briefs');
   process.exit(1);
@@ -64,12 +65,22 @@ async function main() {
   });
 
   try {
-    // Step 1: Navigate to login
-    console.log('\n1️⃣  Navigating to login page...');
-    await page.goto(`${SITE_URL}/login`, { waitUntil: 'networkidle' });
+    // For localhost, use test-briefs page to bypass auth
+    const isLocalhost = SITE_URL.includes('localhost');
+    const targetUrl = isLocalhost ? `${SITE_URL}/test-briefs` : `${SITE_URL}/login`;
 
-    // Step 2: Check if password login is available
-    if (TEST_USER_PASSWORD) {
+    if (isLocalhost) {
+      console.log('\n1️⃣  Navigating directly to test-briefs page (bypassing auth)...');
+      await page.goto(targetUrl, { waitUntil: 'networkidle' });
+      console.log('✅ Loaded test-briefs page!\n');
+      // Skip to monitoring
+    } else {
+      // Step 1: Navigate to login
+      console.log('\n1️⃣  Navigating to login page...');
+      await page.goto(targetUrl, { waitUntil: 'networkidle' });
+
+      // Step 2: Check if password login is available
+      if (TEST_USER_PASSWORD) {
       console.log('2️⃣  Clicking "Email & Password" tab...');
       await page.getByRole('tab', { name: /Email.*Password/i }).click();
       await page.waitForTimeout(500); // Wait for tab content to render
@@ -125,6 +136,7 @@ async function main() {
         throw e;
       }
     }
+    }  // Close the else block for non-localhost
 
     // Step 7: Wait for page to fully load and error to occur
     console.log('7️⃣  Waiting for page to load and monitoring for errors...\n');

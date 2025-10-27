@@ -167,10 +167,13 @@ export function VehicleSelector({
                     className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
                   >
                     <span>{makeStr}</span>
-                    <X
-                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    <button
+                      type="button"
                       onClick={() => removeMake(make)}
-                    />
+                      className="inline-flex items-center hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}
@@ -227,10 +230,13 @@ export function VehicleSelector({
                     className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
                   >
                     <span>{modelStr}</span>
-                    <X
-                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    <button
+                      type="button"
                       onClick={() => removeModel(model)}
-                    />
+                      className="inline-flex items-center hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}
@@ -287,10 +293,13 @@ export function VehicleSelector({
                     className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
                   >
                     <span>{trimStr}</span>
-                    <X
-                      className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    <button
+                      type="button"
                       onClick={() => removeTrim(trim)}
-                    />
+                      className="inline-flex items-center hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}
