@@ -3,7 +3,13 @@
 import * as React from "react"
 import { Button as OriginalButton } from "./button"
 
+const debugUi = process.env.NEXT_PUBLIC_DEBUG_UI === 'true'
+
 export function Button({ children, ...props }: React.ComponentProps<typeof OriginalButton>) {
+  if (!debugUi) {
+    return <OriginalButton {...props}>{children}</OriginalButton>
+  }
+
   const serializedChildren = React.isValidElement(children) ? 'ReactElement' :
     typeof children === 'object' && children !== null ? JSON.stringify(children, null, 2) :
     String(children);
