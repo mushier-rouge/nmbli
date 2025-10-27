@@ -12,11 +12,12 @@
 import { chromium } from 'playwright';
 
 const SITE_URL = process.env.SITE_URL || 'https://nmbli.com';
-const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL;
+const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || process.env.AUTOMATION_TEST_USER_EMAIL;
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || process.env.AUTOMATION_TEST_USER_PASSWORD;
 
 if (!TEST_USER_EMAIL) {
   console.error('ERROR: TEST_USER_EMAIL environment variable is required');
-  console.error('Example: TEST_USER_EMAIL=your@email.com npm run test:debug-briefs');
+  console.error('Example: TEST_USER_EMAIL=your@email.com TEST_USER_PASSWORD=yourpass npm run test:debug-briefs');
   process.exit(1);
 }
 
@@ -67,39 +68,66 @@ async function main() {
     console.log('\n1️⃣  Navigating to login page...');
     await page.goto(`${SITE_URL}/login`, { waitUntil: 'networkidle' });
 
-    // Step 2: Fill email and submit
-    console.log(`2️⃣  Filling email: ${TEST_USER_EMAIL}`);
-    const emailInput = await page.locator('input[type="email"], input[name="email"]').first();
-    await emailInput.fill(TEST_USER_EMAIL);
+    // Step 2: Check if password login is available
+    if (TEST_USER_PASSWORD) {
+      console.log('2️⃣  Clicking "Email & Password" tab...');
+      await page.getByRole('tab', { name: /Email.*Password/i }).click();
+      await page.waitForTimeout(500); // Wait for tab content to render
 
-    console.log('3️⃣  Submitting login form...');
-    const submitButton = await page.locator('button[type="submit"]').first();
-    await submitButton.click();
+      console.log('3️⃣  Filling email: ' + TEST_USER_EMAIL);
+      const emailInput = await page.locator('input[type="email"]').first();
+      await emailInput.fill(TEST_USER_EMAIL);
 
-    // Step 3: Wait for magic link confirmation or login success
-    console.log('4️⃣  Waiting for authentication...');
-    console.log('    ⚠️  YOU NEED TO:');
-    console.log('    1. Check your email for magic link');
-    console.log('    2. Click the link in your email');
-    console.log('    3. Wait for redirect to /briefs');
-    console.log('');
-    console.log('    OR if you used password login, continue normally');
-    console.log('');
-    console.log('    ⏳ Waiting up to 2 minutes for authentication...\n');
+      console.log('4️⃣  Filling password...');
+      const passwordInput = await page.locator('input[type="password"]').first();
+      await passwordInput.fill(TEST_USER_PASSWORD);
 
-    // Wait for navigation to /briefs (after magic link click)
-    try {
-      await page.waitForURL('**/briefs**', { timeout: 120000 });
-      console.log('✅ Successfully navigated to /briefs page!\n');
-    } catch (e) {
-      console.error('❌ Timeout waiting for /briefs navigation');
-      console.log('   Current URL:', page.url());
-      console.log('   Did you click the magic link in your email?\n');
-      throw e;
+      console.log('5️⃣  Submitting login form...');
+      const submitButton = await page.locator('button[type="submit"]').first();
+      await submitButton.click();
+
+      // Wait for navigation to /briefs
+      console.log('6️⃣  Waiting for redirect to /briefs...\n');
+      try {
+        await page.waitForURL('**/briefs**', { timeout: 30000 });
+        console.log('✅ Successfully logged in and navigated to /briefs!\n');
+      } catch (e) {
+        console.error('❌ Timeout waiting for /briefs navigation');
+        console.log('   Current URL:', page.url());
+        console.log('   Authentication may have failed\n');
+        throw e;
+      }
+    } else {
+      console.log('2️⃣  Filling email: ' + TEST_USER_EMAIL);
+      const emailInput = await page.locator('input[type="email"]').first();
+      await emailInput.fill(TEST_USER_EMAIL);
+
+      console.log('3️⃣  No password provided, submitting for magic link...');
+      const submitButton = await page.locator('button[type="submit"]').first();
+      await submitButton.click();
+
+      console.log('4️⃣  Waiting for authentication...');
+      console.log('    ⚠️  YOU NEED TO:');
+      console.log('    1. Check your email for magic link');
+      console.log('    2. Click the link in your email');
+      console.log('    3. Wait for redirect to /briefs');
+      console.log('');
+      console.log('    ⏳ Waiting up to 2 minutes for authentication...\n');
+
+      // Wait for navigation to /briefs (after magic link click)
+      try {
+        await page.waitForURL('**/briefs**', { timeout: 120000 });
+        console.log('✅ Successfully navigated to /briefs page!\n');
+      } catch (e) {
+        console.error('❌ Timeout waiting for /briefs navigation');
+        console.log('   Current URL:', page.url());
+        console.log('   Did you click the magic link in your email?\n');
+        throw e;
+      }
     }
 
-    // Step 4: Wait for page to fully load and error to occur
-    console.log('5️⃣  Waiting for page to load and monitoring for errors...\n');
+    // Step 7: Wait for page to fully load and error to occur
+    console.log('7️⃣  Waiting for page to load and monitoring for errors...\n');
     await page.waitForTimeout(10000); // Wait 10s for React to render and error to occur
 
     // Step 5: Analyze results

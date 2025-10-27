@@ -43,19 +43,38 @@ async function syncUserRecord(user: User) {
 }
 
 async function ensureRoleMetadata(user: User, supabase: ReturnType<typeof createServerClient>) {
-  if (user.user_metadata?.role) {
+  // Always sync role from database to Supabase metadata
+  const email = user.email;
+  if (!email) {
     return;
   }
 
-  const role = resolveRole(user.user_metadata);
-  const { error } = await supabase.auth.updateUser({
-    data: {
-      role,
-    },
-  });
+  try {
+    // Get the role from the database (source of truth)
+    const dbUser = await prisma.user.findUnique({
+      where: { email },
+      select: { role: true },
+    });
 
-  if (error) {
-    console.warn('[auth][password-login] Failed to persist role metadata', error.message);
+    if (!dbUser) {
+      console.warn('[auth][password-login] User not found in database:', email);
+      return;
+    }
+
+    // Update Supabase metadata to match database
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        role: dbUser.role,
+      },
+    });
+
+    if (error) {
+      console.warn('[auth][password-login] Failed to sync role metadata', error.message);
+    } else {
+      console.log('[auth][password-login] Synced role metadata:', { email, role: dbUser.role });
+    }
+  } catch (error) {
+    console.error('[auth][password-login] Error syncing role:', error);
   }
 }
 

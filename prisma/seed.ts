@@ -15,7 +15,7 @@ const automationUserPassword =
   process.env.AUTOMATION_TEST_USER_PASSWORD ??
   process.env.NEXT_PUBLIC_AUTOMATION_TEST_USER_PASSWORD ??
   'Automation!123';
-const automationUserName = process.env.AUTOMATION_TEST_USER_NAME ?? 'Automation Ops';
+const automationUserName = process.env.AUTOMATION_TEST_USER_NAME ?? 'Automation Test Buyer';
 
 async function ensureAutomationTestUser() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -49,7 +49,7 @@ async function ensureAutomationTestUser() {
       password: automationUserPassword,
       email_confirm: true,
       user_metadata: {
-        role: 'ops',
+        role: 'buyer',
         full_name: automationUserName,
       },
     });
@@ -67,7 +67,7 @@ async function ensureAutomationTestUser() {
       email_confirm: true,
       user_metadata: {
         ...(existingUser?.user_metadata ?? {}),
-        role: 'ops',
+        role: 'buyer',
         full_name: automationUserName,
       },
     });
@@ -87,13 +87,13 @@ async function ensureAutomationTestUser() {
     where: { email: automationUserEmail },
     update: {
       id: userId,
-      role: 'ops',
+      role: 'buyer',
       name: automationUserName,
     },
     create: {
       id: userId,
       email: automationUserEmail,
-      role: 'ops',
+      role: 'buyer',
       name: automationUserName,
     },
   });
@@ -131,6 +131,66 @@ async function main() {
   });
 
   const automationUserId = await ensureAutomationTestUser();
+
+  // Create test briefs for automation user
+  if (automationUserId) {
+    const automationBrief1 = await prisma.brief.upsert({
+      where: { id: 'automation-brief-1' },
+      update: {},
+      create: {
+        id: 'automation-brief-1',
+        buyerId: automationUserId,
+        status: 'sourcing',
+        zipcode: '94102', // San Francisco, CA
+        paymentType: 'lease',
+        maxOTD: 50000,
+        makes: ['Tesla', 'BMW'],
+        models: ['Model 3', '3 Series'],
+        trims: ['Long Range', 'M Sport'],
+        colors: ['Black', 'White', 'Blue'],
+        mustHaves: ['Autopilot', 'Premium sound'],
+        timelinePreference: 'Within 1 month',
+        paymentPreferences: [
+          {
+            downPayment: 4000,
+            monthlyBudget: 500,
+            termMonths: 36,
+          },
+        ],
+      },
+    });
+
+    const automationBrief2 = await prisma.brief.upsert({
+      where: { id: 'automation-brief-2' },
+      update: {},
+      create: {
+        id: 'automation-brief-2',
+        buyerId: automationUserId,
+        status: 'sourcing',
+        zipcode: '98101', // Seattle, WA
+        paymentType: 'finance',
+        maxOTD: 65000,
+        makes: ['Audi', 'Mercedes-Benz'],
+        models: ['A4', 'C-Class'],
+        trims: ['Premium Plus', 'AMG'],
+        colors: ['Gray', 'Silver'],
+        mustHaves: ['Leather seats', 'Navigation'],
+        timelinePreference: 'Flexible',
+        paymentPreferences: [
+          {
+            downPayment: 6000,
+            monthlyBudget: 700,
+            termMonths: 60,
+          },
+        ],
+      },
+    });
+
+    console.log('✅ Created automation test briefs:', {
+      brief1: automationBrief1.id,
+      brief2: automationBrief2.id,
+    });
+  }
 
   // Create test briefs
   const testBrief1 = await prisma.brief.upsert({
