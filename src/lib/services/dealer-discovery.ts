@@ -68,7 +68,7 @@ export async function discoverDealersForBrief(briefId: string) {
             await prisma.dealerProspect.create({
               data: {
                 briefId,
-                dealerId: dealership.id,
+                // dealerId is null - these are discovered dealerships, not registered dealers
                 name: dealership.name,
                 brand: make,
                 city: dealership.city,
