@@ -8,7 +8,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { CreateBriefInput } from '@/lib/validation/brief';
-import { apiCreateBrief } from '@/lib/api/client';
+import { apiCreateBrief, apiTriggerAutomation } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -174,10 +174,17 @@ export function BriefForm() {
       };
 
       const { brief } = await apiCreateBrief(payload);
+      const briefId = (brief as { id: string }).id;
+
+      // Trigger automation in background (fire-and-forget from frontend perspective)
+      apiTriggerAutomation(briefId).catch((error) => {
+        console.error('Failed to trigger automation:', error);
+      });
+
       toast.success('Brief created');
       resetPaymentOptions();
       form.reset();
-      router.push(`/briefs/${(brief as { id: string }).id}`);
+      router.push(`/briefs/${briefId}`);
     } catch (error) {
       console.error(error);
       toast.error('Could not create brief', {

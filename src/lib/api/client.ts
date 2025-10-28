@@ -25,6 +25,13 @@ export async function apiCreateBrief(payload: CreateBriefInput) {
   return handleResponse<{ brief: unknown }>(response);
 }
 
+export async function apiTriggerAutomation(briefId: string) {
+  const response = await fetch(`/api/briefs/${briefId}/automate`, {
+    method: 'POST',
+  });
+  return handleResponse<{ success: boolean; message: string }>(response);
+}
+
 export async function apiFetchBrief(id: string) {
   const response = await fetch(`/api/briefs/${id}`);
   return handleResponse<{ brief: unknown }>(response);
