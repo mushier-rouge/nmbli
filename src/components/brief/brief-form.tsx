@@ -243,29 +243,30 @@ export function BriefForm() {
         </div>
 
         <section className="space-y-4">
-          <div>
-            <h2 className="text-sm font-semibold uppercase text-muted-foreground">Payment preferences</h2>
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold">Payment preferences</h2>
+            <p className="text-base text-muted-foreground">
               Select every payment path you are open to. We share your down payment and monthly targets with dealers.
             </p>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {paymentOptionEntries.map(([type, copy]) => {
               const option = paymentOptions[type];
               const checkboxId = `payment-${type}`;
               return (
-                <div key={type} className="space-y-3 rounded-md border p-3">
+                <div key={type} className="space-y-4 rounded-lg border-2 p-4 hover:border-primary/50 transition-colors">
                   <div className="flex items-start gap-3">
                     <Checkbox
                       id={checkboxId}
                       checked={option.enabled}
                       onCheckedChange={(checked) => updatePaymentToggle(type, Boolean(checked))}
+                      className="mt-1"
                     />
-                    <div>
-                      <label htmlFor={checkboxId} className="text-sm font-medium capitalize">
+                    <div className="flex-1">
+                      <label htmlFor={checkboxId} className="text-base font-semibold capitalize cursor-pointer">
                         {copy.title}
                       </label>
-                      <p className="text-xs text-muted-foreground">{copy.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{copy.description}</p>
                     </div>
                   </div>
                   {type !== 'cash' && option.enabled && (
@@ -347,8 +348,8 @@ export function BriefForm() {
           />
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex justify-center pt-4">
+          <Button type="submit" disabled={isSubmitting} size="lg" className="w-full sm:w-auto sm:min-w-[300px] text-lg font-bold py-6">
             {isSubmitting ? 'Saving…' : 'Create brief'}
           </Button>
         </div>

@@ -93,14 +93,16 @@ export function BriefCard({ brief }: BriefCardProps) {
   const canEdit = brief.status === 'sourcing';
 
   return (
-    <Card className="flex h-full flex-col justify-between">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
-            <span>{title}</span>
-          </CardTitle>
+    <Card className="flex h-full flex-col justify-between hover:shadow-lg transition-shadow">
+      <CardHeader className="space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <CardTitle className="text-xl font-bold tracking-tight">
+              <span>{title}</span>
+            </CardTitle>
+          </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="capitalize">
+            <Badge variant="outline" className="capitalize text-sm font-semibold px-3 py-1">
               <span>{String(brief.status)}</span>
             </Badge>
             {canEdit && (
@@ -111,6 +113,7 @@ export function BriefCard({ brief }: BriefCardProps) {
                     size="icon"
                     className="h-8 w-8"
                     disabled={isDeleting}
+                    aria-label="Open menu"
                   >
                     <MoreVertical className="h-4 w-4" />
                     <span className="sr-only">Open menu</span>
@@ -130,7 +133,7 @@ export function BriefCard({ brief }: BriefCardProps) {
             )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground font-medium">
           ZIP {String(brief.zipcode)} · Max OTD{' '}
           {formatCurrency(
             typeof brief.maxOTD === 'object' && brief.maxOTD !== null && 'toNumber' in brief.maxOTD
@@ -171,8 +174,8 @@ export function BriefCard({ brief }: BriefCardProps) {
           Last updated {new Date(brief.updatedAt).toLocaleDateString()}
         </p>
       </CardContent>
-      <CardFooter>
-        <Button asChild variant="secondary" className="w-full">
+      <CardFooter className="pt-4">
+        <Button asChild size="lg" className="w-full text-base font-semibold">
           <Link href={`/briefs/${brief.id}`}>Open timeline</Link>
         </Button>
       </CardFooter>

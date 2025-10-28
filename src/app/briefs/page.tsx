@@ -51,13 +51,13 @@ export default async function BriefsPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-4 py-10">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Your search briefs</h1>
-          <p className="text-sm text-muted-foreground">Track dealer invites, quotes, and contract progress in one place.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Your search briefs</h1>
+          <p className="mt-1 text-base text-muted-foreground">Track dealer invites, quotes, and contract progress in one place.</p>
         </div>
-        <Button asChild>
-          <Link href="/briefs/new">New brief</Link>
+        <Button asChild size="lg" className="text-base font-semibold px-8">
+          <Link href="/briefs/new">+ New brief</Link>
         </Button>
       </header>
 
@@ -66,11 +66,11 @@ export default async function BriefsPage() {
           <BriefCard key={brief.id} brief={brief} />
         ))}
         {briefs.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-              <p className="text-sm text-muted-foreground">No briefs yet.</p>
-              <Button asChild>
-                <Link href="/briefs/new">Create your first brief</Link>
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <p className="text-base text-muted-foreground">No briefs yet. Create one to get started!</p>
+              <Button asChild size="lg" className="text-base font-semibold px-8">
+                <Link href="/briefs/new">+ Create your first brief</Link>
               </Button>
             </CardContent>
           </Card>
