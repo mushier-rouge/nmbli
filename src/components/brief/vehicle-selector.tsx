@@ -182,9 +182,7 @@ export function VehicleSelector({
             {makes
               .filter(make => make != null && make !== '')
               .map((make) => {
-                console.log('[VehicleSelector] Rendering make chip', { make, type: typeof make, stringValue: String(make) });
                 const makeStr = String(make);
-                console.log('[VehicleSelector] makeStr created', { makeStr, type: typeof makeStr });
                 return (
                   <div
                     key={makeStr}
