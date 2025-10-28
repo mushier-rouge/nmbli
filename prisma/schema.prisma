@@ -226,6 +226,16 @@ model InviteCode {
   @@index([code])
 }
 
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  notifiedAt DateTime?
+
+  @@index([email])
+  @@index([createdAt])
+}
+
 enum UserRole {
   buyer
   dealer

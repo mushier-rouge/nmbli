@@ -13,6 +13,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+const emailSchema = z.object({
+  email: z.string().email(),
+});
+
 const magicLinkSchema = z.object({
   email: z.string().email(),
   inviteCode: z.string().optional(),
@@ -28,10 +32,24 @@ const automationPassword = process.env.NEXT_PUBLIC_AUTOMATION_TEST_USER_PASSWORD
 const showAutomationHelper =
   process.env.NODE_ENV !== 'production' && Boolean(automationEmail && automationPassword);
 
+type EmailCheckResult = {
+  exists: boolean;
+  needsInvite: boolean;
+};
+
 export function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailCheckResult, setEmailCheckResult] = useState<EmailCheckResult | null>(null);
+  const [checkedEmail, setCheckedEmail] = useState<string>('');
   const router = useRouter();
   const params = useSearchParams();
+
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
 
   const magicLinkForm = useForm<z.infer<typeof magicLinkSchema>>({
     resolver: zodResolver(magicLinkSchema),
@@ -49,29 +67,102 @@ export function LoginForm() {
     },
   });
 
-  async function onMagicLinkSubmit(values: z.infer<typeof magicLinkSchema>) {
+  async function onEmailCheck(values: z.infer<typeof emailSchema>) {
     setIsSubmitting(true);
     try {
-      const redirectTo = params.get('redirectTo');
-      const response = await fetch('/api/auth/magic-link', {
+      const response = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          roleHint: 'buyer',
-          redirectTo: redirectTo ? `${window.location.origin}${redirectTo}` : undefined,
-        }),
+        body: JSON.stringify(values),
       });
 
       if (!response.ok) {
-        const { message } = await response.json();
-        throw new Error(message ?? 'Failed to send magic link');
+        throw new Error('Failed to check email');
       }
 
-      toast.success('Magic link sent', {
-        description: `Check ${values.email} for a sign-in link.`,
+      const result: EmailCheckResult = await response.json();
+      setEmailCheckResult(result);
+      setCheckedEmail(values.email);
+
+      // If user exists, proceed directly to send magic link
+      if (result.exists) {
+        await sendMagicLink(values.email, undefined);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not check email', {
+        description: error instanceof Error ? error.message : 'Please try again.',
       });
-      router.push('/login/check-email');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function onJoinWaitlist() {
+    if (!checkedEmail) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: checkedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to join waitlist');
+      }
+
+      toast.success('Added to waitlist!', {
+        description: data.message,
+      });
+
+      // Reset form
+      setEmailCheckResult(null);
+      setCheckedEmail('');
+      emailForm.reset();
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not join waitlist', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function sendMagicLink(email: string, inviteCode?: string) {
+    const redirectTo = params.get('redirectTo');
+    const response = await fetch('/api/auth/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        inviteCode,
+        roleHint: 'buyer',
+        redirectTo: redirectTo ? `${window.location.origin}${redirectTo}` : undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      const { message } = await response.json();
+      throw new Error(message ?? 'Failed to send magic link');
+    }
+
+    toast.success('Magic link sent', {
+      description: `Check ${email} for a sign-in link.`,
+    });
+    router.push('/login/check-email');
+  }
+
+  async function onInviteCodeSubmit(values: z.infer<typeof magicLinkSchema>) {
+    if (!checkedEmail) return;
+
+    setIsSubmitting(true);
+    try {
+      await sendMagicLink(checkedEmail, values.inviteCode);
     } catch (error) {
       console.error(error);
       toast.error('Could not send magic link', {
@@ -123,41 +214,92 @@ export function LoginForm() {
           </TabsList>
 
           <TabsContent value="magic-link">
-            <Form {...magicLinkForm}>
-              <form className="space-y-4" onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)}>
-                <FormField
-                  control={magicLinkForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {!emailCheckResult ? (
+              /* Step 1: Enter email */
+              <Form {...emailForm}>
+                <form className="space-y-4" onSubmit={emailForm.handleSubmit(onEmailCheck)}>
+                  <FormField
+                    control={emailForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={magicLinkForm.control}
-                  name="inviteCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Invite Code <span className="text-xs text-muted-foreground">(required for new users)</span></FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., testdrive" type="text" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? 'Checking…' : 'Continue'}
+                  </Button>
+                </form>
+              </Form>
+            ) : emailCheckResult.needsInvite ? (
+              /* Step 2a: New user needs invite code */
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <p>Signing up with: <span className="font-medium text-foreground">{checkedEmail}</span></p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmailCheckResult(null);
+                      setCheckedEmail('');
+                    }}
+                    className="text-primary underline hover:no-underline"
+                  >
+                    Change email
+                  </button>
+                </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Sending link…' : 'Email me a link'}
+                <Form {...magicLinkForm}>
+                  <form className="space-y-4" onSubmit={magicLinkForm.handleSubmit(onInviteCodeSubmit)}>
+                    <FormField
+                      control={magicLinkForm.control}
+                      name="inviteCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Invite Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., testdrive" type="text" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? 'Sending link…' : 'Send magic link'}
+                    </Button>
+                  </form>
+                </Form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={onJoinWaitlist}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Joining…' : 'Join waitlist'}
                 </Button>
-              </form>
-            </Form>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Don&apos;t have an invite code? Join our waitlist and we&apos;ll email you one when available.
+                </p>
+              </div>
+            ) : null}
           </TabsContent>
 
           <TabsContent value="password">
