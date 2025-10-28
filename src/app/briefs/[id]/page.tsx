@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { ShadinessPill } from '@/components/brief/shadiness-pill';
 import { QuoteActions } from '@/components/brief/quote-actions';
 import { getBriefDetail } from '@/lib/services/briefs';
+import { listDealerProspects } from '@/lib/services/dealer-prospects';
 import { getSessionContext } from '@/lib/auth/session';
 import { canAccessBrief } from '@/lib/auth/roles';
 import { formatCurrency, formatPercent } from '@/lib/utils/number';
@@ -80,6 +81,8 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
 
   const timelineEvents = brief.timelineEvents.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+  const dealerProspects = await listDealerProspects(id);
+
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-10">
       <header className="space-y-4">
@@ -133,6 +136,7 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
       <Tabs defaultValue="offers" className="w-full">
         <TabsList>
           <TabsTrigger value="offers">Offers</TabsTrigger>
+          <TabsTrigger value="dealers">Dealers ({dealerProspects.length})</TabsTrigger>
           <TabsTrigger value="counters">Counters</TabsTrigger>
           <TabsTrigger value="contract">Contract</TabsTrigger>
         </TabsList>
@@ -236,6 +240,94 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
               <Card className="border-dashed">
                 <CardContent className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                   <p>No quotes yet. We&apos;ll notify you as soon as a dealer responds.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="dealers" className="space-y-6 pt-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            {dealerProspects.map((dealer) => {
+              const location = [dealer.city, dealer.state].filter(Boolean).join(', ');
+              const distance = dealer.distanceMiles ? `${dealer.distanceMiles.toFixed(0)} mi` : null;
+              const driveTime = dealer.driveHours ? `${dealer.driveHours.toFixed(1)} h drive` : null;
+              const distanceText = [distance, driveTime].filter(Boolean).join(' · ');
+
+              return (
+                <Card key={dealer.id} className="flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-bold">{dealer.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {dealer.brand}
+                          {location && ` · ${location}`}
+                        </p>
+                        {distanceText && (
+                          <p className="text-xs text-muted-foreground mt-1">{distanceText}</p>
+                        )}
+                      </div>
+                      {dealer.status === 'contacted' && (
+                        <Badge variant="secondary" className="font-semibold">Contacted</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 flex-1">
+                    <div className="space-y-2 text-sm">
+                      {dealer.address && (
+                        <p className="text-muted-foreground">{dealer.address}</p>
+                      )}
+                      <div className="flex flex-col gap-1">
+                        {dealer.phone && (
+                          <a
+                            href={`tel:${dealer.phone}`}
+                            className="text-primary hover:underline font-medium"
+                          >
+                            {dealer.phone}
+                          </a>
+                        )}
+                        {dealer.email && (
+                          <a
+                            href={`mailto:${dealer.email}`}
+                            className="text-primary hover:underline"
+                          >
+                            {dealer.email}
+                          </a>
+                        )}
+                        {dealer.website && (
+                          <a
+                            href={dealer.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Visit website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    {dealer.notes && (
+                      <>
+                        <Separator />
+                        <p className="text-sm text-muted-foreground">{dealer.notes}</p>
+                      </>
+                    )}
+                  </CardContent>
+                  <CardFooter className="text-xs text-muted-foreground">
+                    {dealer.lastContactedAt
+                      ? `Last contacted ${new Date(dealer.lastContactedAt).toLocaleDateString()}`
+                      : `Discovered ${new Date(dealer.createdAt).toLocaleDateString()}`
+                    }
+                  </CardFooter>
+                </Card>
+              );
+            })}
+            {dealerProspects.length === 0 && (
+              <Card className="border-dashed border-2 lg:col-span-2">
+                <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                  <p className="text-base text-muted-foreground">
+                    We're finding nearby dealers for you. Check back soon!
+                  </p>
                 </CardContent>
               </Card>
             )}
