@@ -93,6 +93,9 @@ export function VehicleSelector({
       onModelsChange([]);
       onTrimsChange([]);
     }
+
+    // Close dropdown after selection
+    setShowMakeDropdown(false);
   };
 
   const toggleModel = (model: string) => {
@@ -112,6 +115,11 @@ export function VehicleSelector({
     if (model !== OTHER_MODEL_VALUE) {
       setCustomModelText('');
     }
+
+    // Close dropdown after selection (but keep open if "Other" is selected for text input)
+    if (model !== OTHER_MODEL_VALUE) {
+      setShowModelDropdown(false);
+    }
   };
 
   const toggleTrim = (trim: string) => {
@@ -125,6 +133,11 @@ export function VehicleSelector({
     // Clear custom trim text if switching away from "Other"
     if (trim !== OTHER_TRIM_VALUE) {
       setCustomTrimText('');
+    }
+
+    // Close dropdown after selection (but keep open if "Other" is selected for text input)
+    if (trim !== OTHER_TRIM_VALUE) {
+      setShowTrimDropdown(false);
     }
   };
 

@@ -215,6 +215,17 @@ model DevInviteCode {
   createdAt DateTime @default(now())
 }
 
+model InviteCode {
+  id           String    @id @default(uuid())
+  code         String    @unique
+  usedAt       DateTime?
+  usedByEmail  String?
+  usedByUserId String?
+  createdAt    DateTime  @default(now())
+
+  @@index([code])
+}
+
 enum UserRole {
   buyer
   dealer

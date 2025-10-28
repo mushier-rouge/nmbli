@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
   const rawRole = (user.user_metadata?.role as string | undefined) ?? 'buyer';
   const role: UserRole = ['buyer', 'dealer', 'ops'].includes(rawRole) ? (rawRole as UserRole) : 'buyer';
   const name = (user.user_metadata?.full_name as string | undefined) ?? email.split('@')[0];
+  const inviteCode = user.user_metadata?.inviteCode as string | undefined;
 
   debugAuth('callback', 'Session established', {
     email,
@@ -66,7 +67,47 @@ export async function GET(request: NextRequest) {
     userId: user.id,
     expiresAt: session.expires_at,
     accessToken: session.access_token ? '<present>' : '<missing>',
+    inviteCode: inviteCode ? '<present>' : '<missing>',
   });
+
+  // Check if this is a new user
+  const existingUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { id: true },
+  });
+
+  // For new users, validate and consume invite code
+  if (!existingUser && inviteCode) {
+    const invite = await prisma.inviteCode.findUnique({
+      where: { code: inviteCode.toLowerCase().trim() },
+    });
+
+    if (!invite) {
+      debugAuth('callback', 'Invalid invite code', { inviteCode });
+      return NextResponse.redirect(new URL('/login?reason=invalid_invite_code', url.origin));
+    }
+
+    if (invite.usedAt) {
+      debugAuth('callback', 'Invite code already used', { inviteCode, usedAt: invite.usedAt });
+      return NextResponse.redirect(new URL('/login?reason=invite_code_used', url.origin));
+    }
+
+    // Mark invite code as used
+    await prisma.inviteCode.update({
+      where: { code: inviteCode.toLowerCase().trim() },
+      data: {
+        usedAt: new Date(),
+        usedByEmail: email,
+        usedByUserId: user.id,
+      },
+    });
+
+    debugAuth('callback', 'Invite code consumed', { inviteCode, email });
+  } else if (!existingUser) {
+    // New user without invite code
+    debugAuth('callback', 'New user missing invite code', { email });
+    return NextResponse.redirect(new URL('/login?reason=invite_code_required', url.origin));
+  }
 
   await prisma.user.upsert({
     where: { id: user.id },

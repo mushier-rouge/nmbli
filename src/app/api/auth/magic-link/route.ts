@@ -3,11 +3,13 @@ import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 
 import { debugAuth } from '@/lib/debug';
+import { prisma } from '@/lib/prisma';
 
 // Fixed NEXT_PUBLIC_APP_URL - rebuild to pick up corrected env var
 
 const requestSchema = z.object({
   email: z.string().email(),
+  inviteCode: z.string().min(1, 'Invite code is required'),
   roleHint: z.enum(['buyer', 'dealer', 'ops']).default('buyer'),
   redirectTo: z
     .string()
@@ -17,7 +19,22 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { email, roleHint, redirectTo } = requestSchema.parse(body);
+  const { email, inviteCode, roleHint, redirectTo } = requestSchema.parse(body);
+
+  // Validate invite code before sending magic link
+  const invite = await prisma.inviteCode.findUnique({
+    where: { code: inviteCode.toLowerCase().trim() },
+  });
+
+  if (!invite) {
+    debugAuth('magic-link', 'Invalid invite code', { inviteCode });
+    return NextResponse.json({ message: 'Invalid invite code' }, { status: 400 });
+  }
+
+  if (invite.usedAt) {
+    debugAuth('magic-link', 'Invite code already used', { inviteCode, usedAt: invite.usedAt });
+    return NextResponse.json({ message: 'Invite code has already been used' }, { status: 400 });
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -58,6 +75,7 @@ export async function POST(request: Request) {
       emailRedirectTo: redirect,
       data: {
         role: roleHint,
+        inviteCode,
       },
     },
   });

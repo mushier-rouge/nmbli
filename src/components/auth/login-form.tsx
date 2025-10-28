@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const magicLinkSchema = z.object({
   email: z.string().email(),
+  inviteCode: z.string().min(1, 'Invite code is required'),
 });
 
 const passwordSchema = z.object({
@@ -36,6 +37,7 @@ export function LoginForm() {
     resolver: zodResolver(magicLinkSchema),
     defaultValues: {
       email: '',
+      inviteCode: '',
     },
   });
 
@@ -131,6 +133,20 @@ export function LoginForm() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input autoComplete="email" placeholder="you@example.com" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={magicLinkForm.control}
+                  name="inviteCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invite Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., testdrive" type="text" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
