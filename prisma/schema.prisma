@@ -147,7 +147,7 @@ model Quote {
   updatedAt       DateTime        @updatedAt
   contract        Contract?
   files           FileAsset[]
-  brief           Brief           @relation(fields: [briefId], references: [id])
+  brief           Brief           @relation(fields: [briefId], references: [id], onDelete: Cascade)
   dealer          Dealer          @relation(fields: [dealerId], references: [id])
   invite          DealerInvite?   @relation(fields: [inviteId], references: [id])
   parentQuote     Quote?          @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
@@ -187,7 +187,7 @@ model TimelineEvent {
   payload   Json
   createdAt DateTime          @default(now())
   files     FileAsset[]
-  brief     Brief             @relation(fields: [briefId], references: [id])
+  brief     Brief             @relation(fields: [briefId], references: [id], onDelete: Cascade)
   quote     Quote?            @relation(fields: [quoteId], references: [id])
 }
 
