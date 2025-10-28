@@ -26,7 +26,7 @@ type BriefCardProps = {
     makes: unknown;
     models: unknown;
     zipcode: string;
-    maxOTD: { toNumber(): number };
+    maxOTD: number | string | { toNumber(): number };
     paymentPreferences: unknown;
     paymentType: string;
     mustHaves: unknown;
@@ -139,7 +139,11 @@ export function BriefCard({ brief }: BriefCardProps) {
         </div>
         <p className="text-sm text-muted-foreground">
           ZIP {String(brief.zipcode)} · Max OTD{' '}
-          {formatCurrency(brief.maxOTD.toNumber())}
+          {formatCurrency(
+            typeof brief.maxOTD === 'object' && brief.maxOTD !== null && 'toNumber' in brief.maxOTD
+              ? brief.maxOTD.toNumber()
+              : Number(brief.maxOTD)
+          )}
         </p>
       </CardHeader>
       <CardContent className="space-y-2">

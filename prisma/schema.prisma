@@ -227,13 +227,16 @@ model InviteCode {
 }
 
 model Waitlist {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  notifiedAt DateTime?
+  id                String    @id @default(uuid())
+  email             String    @unique
+  verificationToken String?   @unique @default(uuid())
+  verifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  notifiedAt        DateTime?
 
   @@index([email])
   @@index([createdAt])
+  @@index([verificationToken])
 }
 
 enum UserRole {
