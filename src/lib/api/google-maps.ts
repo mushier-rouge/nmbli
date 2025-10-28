@@ -41,7 +41,6 @@ export async function findDealersInState(params: {
       params: {
         query: searchQuery,
         key: apiKey,
-        type: 'car_dealer',
       },
     });
 
