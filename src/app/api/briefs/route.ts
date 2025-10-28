@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBrief, listBuyerBriefs, listLatestBriefs } from '@/lib/services/briefs';
 import { createBriefSchema } from '@/lib/validation/brief';
 import { requireSession } from '@/lib/auth/session';
+import { briefAutomation } from '@/lib/services/brief-automation';
 
 export async function GET() {
   try {
@@ -28,6 +29,13 @@ export async function POST(request: NextRequest) {
     const parsed = createBriefSchema.parse(body);
 
     const brief = await createBrief({ buyerId: session.userId, input: parsed });
+
+    // Trigger dealer discovery automation asynchronously (fire-and-forget)
+    // This will discover dealers, contact them, and update brief status
+    briefAutomation.processBrief(brief.id).catch((error) => {
+      console.error(`[Brief ${brief.id}] Automation failed:`, error);
+      // Don't fail the request - automation can be retried later
+    });
 
     return NextResponse.json({ brief });
   } catch (error) {
