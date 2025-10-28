@@ -81,12 +81,9 @@ export function VehicleSelector({
   ).sort();
 
   const toggleMake = (make: string) => {
-    console.log('[VehicleSelector] toggleMake START', { make, currentMakes: makes, type: typeof make });
     // Only allow selecting one make at a time - if clicking the same make, deselect it
     const newMakes = makes.includes(make) ? [] : [make];
-    console.log('[VehicleSelector] toggleMake calling onMakesChange', { newMakes });
     onMakesChange(newMakes);
-    console.log('[VehicleSelector] toggleMake END');
 
     // Clear models and trims when changing makes
     if (newMakes.length === 0 || newMakes[0] !== makes[0]) {
@@ -99,12 +96,9 @@ export function VehicleSelector({
   };
 
   const toggleModel = (model: string) => {
-    console.log('[VehicleSelector] toggleModel START', { model, currentModels: models, type: typeof model });
     // Only allow selecting one model at a time - if clicking the same model, deselect it
     const newModels = models.includes(model) ? [] : [model];
-    console.log('[VehicleSelector] toggleModel calling onModelsChange', { newModels });
     onModelsChange(newModels);
-    console.log('[VehicleSelector] toggleModel END');
 
     // Clear trims when changing models
     if (newModels.length === 0 || newModels[0] !== models[0]) {
@@ -123,12 +117,9 @@ export function VehicleSelector({
   };
 
   const toggleTrim = (trim: string) => {
-    console.log('[VehicleSelector] toggleTrim START', { trim, currentTrims: trims, type: typeof trim });
     // Only allow selecting one trim at a time - if clicking the same trim, deselect it
     const newTrims = trims.includes(trim) ? [] : [trim];
-    console.log('[VehicleSelector] toggleTrim calling onTrimsChange', { newTrims });
     onTrimsChange(newTrims);
-    console.log('[VehicleSelector] toggleTrim END');
 
     // Clear custom trim text if switching away from "Other"
     if (trim !== OTHER_TRIM_VALUE) {
@@ -142,24 +133,14 @@ export function VehicleSelector({
   };
 
   const removeMake = (make: string) => {
-    console.log('[VehicleSelector] removeMake called', { make, type: typeof make });
     toggleMake(make);
   };
   const removeModel = (model: string) => {
-    console.log('[VehicleSelector] removeModel called', { model, type: typeof model });
     toggleModel(model);
   };
   const removeTrim = (trim: string) => {
-    console.log('[VehicleSelector] removeTrim called', { trim, type: typeof trim });
     toggleTrim(trim);
   };
-
-  console.log('[VehicleSelector] RENDER', {
-    makes,
-    makesType: makes.map(m => ({ value: m, type: typeof m })),
-    models,
-    trims
-  });
 
   return (
     <div className="space-y-4" data-v="2">

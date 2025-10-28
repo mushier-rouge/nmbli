@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nmbli Test Plan - Critical User Journeys</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            border-bottom: 4px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card.covered {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .stat-card.partial {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .stat-card.missing {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        h2 {
+            color: #1a1a1a;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 5px solid #4CAF50;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .journey {
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .journey-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .journey-title {
+            font-weight: 600;
+            font-size: 1.2em;
+            color: #1a1a1a;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.covered {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge.partial {
+            background: #ff9800;
+            color: white;
+        }
+
+        .badge.missing {
+            background: #f44336;
+            color: white;
+        }
+
+        .badge.priority-high {
+            background: #d32f2f;
+            color: white;
+            margin-left: 8px;
+        }
+
+        .badge.priority-medium {
+            background: #ff9800;
+            color: white;
+            margin-left: 8px;
+        }
+
+        .badge.priority-low {
+            background: #9e9e9e;
+            color: white;
+            margin-left: 8px;
+        }
+
+        .test-cases {
+            margin-top: 15px;
+        }
+
+        .test-case {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .test-case-icon {
+            font-size: 1.2em;
+            margin-top: 2px;
+        }
+
+        .test-case-content {
+            flex: 1;
+        }
+
+        .test-case-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .test-case-type {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .test-type-unit {
+            color: #4CAF50;
+        }
+
+        .test-type-e2e {
+            color: #2196F3;
+        }
+
+        .test-type-playwright {
+            color: #9c27b0;
+        }
+
+        .missing-test {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+
+        .notes {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .notes-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1565c0;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .role-section {
+            margin-bottom: 60px;
+        }
+
+        .legend {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .legend h3 {
+            margin-top: 0;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .file-ref {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #1976d2;
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Nmbli Test Plan</h1>
+        <p class="subtitle">Comprehensive test coverage analysis for critical user journeys</p>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-number">56</span>
+                <span class="stat-label">Total Critical Journeys</span>
+            </div>
+            <div class="stat-card covered">
+                <span class="stat-number">12</span>
+                <span class="stat-label">Fully Covered</span>
+            </div>
+            <div class="stat-card partial">
+                <span class="stat-number">3</span>
+                <span class="stat-label">Partially Covered</span>
+            </div>
+            <div class="stat-card missing">
+                <span class="stat-number">41</span>
+                <span class="stat-label">Missing Tests</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="badge covered">✅ Covered</span>
+                    <span>Tests exist and pass</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge partial">⚠️ Partial</span>
+                    <span>Some tests exist, gaps remain</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge missing">❌ Missing</span>
+                    <span>No tests exist</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge priority-high">P0</span>
+                    <span>Critical - must have</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge priority-medium">P1</span>
+                    <span>Important - should have</span>
+                </div>
+                <div class="legend-item">
+                    <span class="badge priority-low">P2</span>
+                    <span>Nice to have</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BUYER JOURNEYS -->
+        <div class="role-section">
+            <h2>👤 Buyer User Journeys</h2>
+
+            <h3>Authentication & Onboarding</h3>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">1. New User Registration (Magic Link)</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">User enters email → receives magic link → clicks link → redirected to /briefs</div>
+                            <div class="test-case-type">Needed: <code>e2e/auth-magic-link.spec.ts</code></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Email verification flow</div>
+                            <div class="test-case-type">Needed: Unit test for verification token generation</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="notes">
+                    <div class="notes-title">⚠️ Critical Gap</div>
+                    Magic link flow is not tested end-to-end. Only API login tested.
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">2. New User Registration (Invite Code)</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Enter email → prompted for invite code → submit valid code → account created</div>
+                            <div class="test-case-type">Needed: <code>e2e/auth-invite-code.spec.ts</code></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Invalid invite code → error message shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Used invite code → error message shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">3. Waitlist Signup</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Enter email → no invite code → click "Join waitlist" → success message</div>
+                            <div class="test-case-type">Needed: <code>e2e/waitlist.spec.ts</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">4. Existing User Login (Password)</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">API login with password works</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">scripts/test-automation2-login.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: Switch to password tab → enter credentials → submit → redirected to /briefs</div>
+                            <div class="test-case-type">Needed: Fix <code>scripts/test-brief-crud.ts</code> login flow</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Wrong password → error message shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="notes">
+                    <div class="notes-title">⚠️ Known Issue</div>
+                    Playwright test exists but fails at login step. API works but UI automation doesn't.
+                </div>
+            </div>
+
+            <h3>Brief Creation & Management</h3>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">5. Create New Brief (Happy Path)</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Brief creation service logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/services/briefs.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: /briefs/new → fill all fields → submit → redirected to /briefs → brief appears in list</div>
+                            <div class="test-case-type">Needed: Complete Playwright test in <code>scripts/test-brief-crud.ts</code></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Vehicle selector: Select makes → models → trims populated dynamically</div>
+                            <div class="test-case-type">Needed: Component test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Timeline event "brief_created" recorded</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="notes">
+                    <div class="notes-title">💡 Note</div>
+                    Service logic tested but UI flow and dealer discovery trigger not tested.
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">6. Create Brief with Validation Errors</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Submit without required fields → error messages shown</div>
+                            <div class="test-case-type">Needed: E2E validation test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Invalid ZIP code → validation error</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">maxOTD less than minimum → validation error</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">7. View Brief List</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">List briefs service logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/services/briefs.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: Navigate to /briefs → see list of briefs → correct data displayed</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Empty state: No briefs → "Create your first brief" message shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">8. View Brief Detail / Timeline</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Get brief detail service logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/services/briefs.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: Click brief card → navigate to /briefs/[id] → timeline displayed</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Timeline events show correct actor, time, description</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">9. Delete Brief (Sourcing Status)</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">CASCADE deletes working in database</div>
+                            <div class="test-case-type">Covered: Schema updated, manually verified</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: Click three-dot menu → click "Delete" → confirm dialog → brief deleted → removed from list</div>
+                            <div class="test-case-type">Needed: Complete Playwright test in <code>scripts/test-brief-crud.ts</code></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Related records deleted: quotes, timeline events, dealer prospects</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="notes">
+                    <div class="notes-title">✅ Recent Fix</div>
+                    CASCADE deletes were just added. Manual testing confirmed working.
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">10. Cannot Delete Brief (Non-Sourcing Status)</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Brief with status "offers" → three-dot menu not shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Quote Review & Selection</h3>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">11. View Received Quotes</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Navigate to brief with quotes → quotes list displayed → can see OTD total, dealer name</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">12. Compare Quotes</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Select multiple quotes → click "Compare" → side-by-side comparison view</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">13. Accept Quote</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Click "Accept quote" → confirmation dialog → quote status updated to "accepted"</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Timeline event "quote_accepted" created</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">14. Reject Quote</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Click "Reject quote" → quote status updated to "rejected"</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Contract Review</h3>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">15. Upload Contract</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Upload PDF contract → file uploaded → contract status "uploaded"</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">16. View Contract Diff</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Contract diff logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/contract-diff.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">UI: Contract uploaded → diff shown → discrepancies highlighted</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEALER JOURNEYS -->
+        <div class="role-section">
+            <h2>🏪 Dealer User Journeys</h2>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">17. Receive Dealer Invite Email</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Dealer invited → email sent with magic link</div>
+                            <div class="test-case-type">Needed: Integration test with email mock</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">18. Access Brief via Magic Link</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Click magic link → /d/[token] → brief details shown → no login required</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Invite state updated from "sent" to "viewed"</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Timeline event "invite_viewed" recorded</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">19. Submit Quote</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Fill quote form → submit → quote created with status "draft"</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Publish quote → status changes to "published"</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Timeline event "quote_submitted" created</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">20. Revise Quote</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Buyer requests revision → dealer updates quote → new quote version created</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">21. Expired Magic Link</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Access expired magic link → error message shown</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPS JOURNEYS -->
+        <div class="role-section">
+            <h2>⚙️ Ops User Journeys</h2>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">22. View All Briefs</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Navigate to /ops → see all briefs from all buyers</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">23. Manually Invite Dealers</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Select brief → enter dealer email → send invite → dealer invite created</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">24. Impersonate Buyer</span>
+                        <span class="badge priority-low">P2</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Click "Impersonate" → session switched to buyer → can view buyer's briefs</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTOMATION & BACKGROUND PROCESSES -->
+        <div class="role-section">
+            <h2>🤖 Automation & Background Processes</h2>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">25. Dealer Discovery Trigger</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Dealer discovery service logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/services/dealer-discovery.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Brief created → dealer discovery automatically triggered → dealers found</div>
+                            <div class="test-case-type">Needed: Integration test in <code>scripts/test-brief-crud.ts</code></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">DealerProspect records created with status "pending"</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">26. Dealer Contact via Email</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Email template generation</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/lib/email/templates.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Dealer prospect created → email sent → EmailMessage record created</div>
+                            <div class="test-case-type">Needed: Integration test with email mock</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">27. Dealer Contact via SMS</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Dealer prospect created → SMS sent → SmsMessage record created</div>
+                            <div class="test-case-type">Needed: Integration test with Twilio mock</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">28. Skyvern Automation Trigger</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Brief automation orchestration logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/services/brief-automation.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">No contact info → Skyvern workflow queued → SkyvernRun record created</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">29. Gemini API Dealer Search</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge partial">⚠️ Partial</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Gemini API service logic</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/lib/api/gemini.spec.ts</span></div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">End-to-end: Make/zipcode → Gemini called → dealers returned → parsed correctly</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATA INTEGRITY & EDGE CASES -->
+        <div class="role-section">
+            <h2>🔒 Data Integrity & Edge Cases</h2>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">30. Quote Shadiness Detection</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge covered">✅ Covered</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Shadiness score calculation</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/shadiness.spec.ts</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">31. Vehicle Data Validation</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge covered">✅ Covered</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case">
+                        <div class="test-case-icon">✅</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Vehicle make/model/trim lookup</div>
+                            <div class="test-case-type test-type-unit">Covered: <span class="file-ref">src/__tests__/lib/vehicles.spec.ts</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">32. Unauthorized Access Prevention</span>
+                        <span class="badge priority-high">P0</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Buyer A cannot access Buyer B's briefs</div>
+                            <div class="test-case-type">Needed: E2E security test</div>
+                        </div>
+                    </div>
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Non-logged-in user redirected to /login</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">33. Session Expiration</span>
+                        <span class="badge priority-medium">P1</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Session expires → user redirected to login</div>
+                            <div class="test-case-type">Needed: E2E test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey">
+                <div class="journey-header">
+                    <div>
+                        <span class="journey-title">34. Concurrent Brief Edits</span>
+                        <span class="badge priority-low">P2</span>
+                    </div>
+                    <span class="badge missing">❌ Missing</span>
+                </div>
+                <div class="test-cases">
+                    <div class="test-case missing-test">
+                        <div class="test-case-icon">📝</div>
+                        <div class="test-case-content">
+                            <div class="test-case-title">Ops and buyer edit same brief → optimistic locking / conflict detection</div>
+                            <div class="test-case-type">Needed: Integration test</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXISTING TEST FILES -->
+        <h2>📋 Existing Test Files Inventory</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Test File</th>
+                    <th>Type</th>
+                    <th>Coverage</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>src/__tests__/services/briefs.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>createBrief, listBuyerBriefs, getBriefDetail service logic</td>
+                    <td>✅ 7 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/services/dealer-discovery.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Dealer discovery service, Gemini API integration</td>
+                    <td>✅ 10 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/services/brief-automation.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Brief automation orchestrator, dealer contact methods</td>
+                    <td>✅ 12 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/lib/api/gemini.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Gemini API client</td>
+                    <td>✅ 10 tests (5 skipped)</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/lib/vehicles.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Vehicle data lookup utilities</td>
+                    <td>✅ 6 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/lib/email/templates.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Email template generation</td>
+                    <td>✅ 17 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/shadiness.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Quote shadiness score calculation</td>
+                    <td>✅ 4 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>src/__tests__/contract-diff.spec.ts</code></td>
+                    <td>Unit</td>
+                    <td>Contract difference detection</td>
+                    <td>✅ 4 tests passing</td>
+                </tr>
+                <tr>
+                    <td><code>scripts/test-automation2-login.ts</code></td>
+                    <td>API Test</td>
+                    <td>Password login via Supabase API</td>
+                    <td>✅ Working</td>
+                </tr>
+                <tr>
+                    <td><code>scripts/test-brief-crud.ts</code></td>
+                    <td>Playwright E2E</td>
+                    <td>Login, create brief, delete brief, dealer search trigger</td>
+                    <td>❌ Failing at login step</td>
+                </tr>
+                <tr>
+                    <td><code>e2e/automation.spec.ts</code></td>
+                    <td>Playwright E2E</td>
+                    <td>Unknown (need to inspect)</td>
+                    <td>⚠️ Status unknown</td>
+                </tr>
+                <tr>
+                    <td><code>e2e/debug-briefs-error.spec.ts</code></td>
+                    <td>Playwright E2E</td>
+                    <td>Debug test for brief errors</td>
+                    <td>⚠️ Status unknown</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- PRIORITY RECOMMENDATIONS -->
+        <h2>🎯 Priority Test Recommendations</h2>
+
+        <div class="journey">
+            <div class="journey-header">
+                <div>
+                    <span class="journey-title" style="color: #d32f2f;">P0: Critical - Block Production</span>
+                </div>
+            </div>
+            <ol>
+                <li><strong>Fix Playwright login test</strong> - <code>scripts/test-brief-crud.ts</code> fails at login. Root cause: form submission not working in headless browser. Need to debug with screenshots/traces.</li>
+                <li><strong>E2E: Complete brief creation flow</strong> - Login → create brief → verify brief appears in list → verify dealer discovery triggered.</li>
+                <li><strong>E2E: Brief deletion flow</strong> - Login → navigate to briefs → delete brief → verify cascade deletes worked.</li>
+                <li><strong>E2E: Dealer magic link flow</strong> - Create dealer invite → access /d/[token] → verify brief shown → submit quote.</li>
+                <li><strong>E2E: Quote acceptance flow</strong> - Buyer views quotes → accepts quote → verify status updated.</li>
+                <li><strong>Security: Unauthorized access test</strong> - Verify buyers can't access other buyers' briefs.</li>
+            </ol>
+        </div>
+
+        <div class="journey">
+            <div class="journey-header">
+                <div>
+                    <span class="journey-title" style="color: #ff9800;">P1: Important - Should Have</span>
+                </div>
+            </div>
+            <ol>
+                <li><strong>E2E: Magic link registration</strong> - New user signs up via magic link.</li>
+                <li><strong>E2E: Invite code validation</strong> - Test valid/invalid/used invite codes.</li>
+                <li><strong>E2E: Quote revision flow</strong> - Dealer submits quote, buyer requests revision, dealer updates.</li>
+                <li><strong>Integration: Email/SMS sending</strong> - Test dealer contact automation end-to-end.</li>
+                <li><strong>E2E: Contract diff review</strong> - Upload contract → view diff → verify discrepancies shown.</li>
+            </ol>
+        </div>
+
+        <div class="journey">
+            <div class="journey-header">
+                <div>
+                    <span class="journey-title" style="color: #9e9e9e;">P2: Nice to Have</span>
+                </div>
+            </div>
+            <ol>
+                <li><strong>E2E: Ops impersonation</strong> - Ops user impersonates buyer.</li>
+                <li><strong>E2E: Session expiration</strong> - Verify session timeout redirects to login.</li>
+                <li><strong>E2E: Waitlist signup</strong> - User joins waitlist without invite code.</li>
+                <li><strong>Component tests</strong> - Vehicle selector, quote comparison, etc.</li>
+            </ol>
+        </div>
+
+        <!-- IMPLEMENTATION PLAN -->
+        <h2>📅 Suggested Implementation Plan</h2>
+
+        <h3>Week 1: Critical Path (P0)</h3>
+        <ul>
+            <li><strong>Day 1-2:</strong> Fix Playwright login test. Debug with <code>headless: false</code>, add screenshots on failure, check for React hydration issues.</li>
+            <li><strong>Day 3:</strong> Complete E2E brief creation test (extends login fix).</li>
+            <li><strong>Day 4:</strong> Complete E2E brief deletion test.</li>
+            <li><strong>Day 5:</strong> E2E dealer magic link flow.</li>
+        </ul>
+
+        <h3>Week 2: Core Flows (P0 continued)</h3>
+        <ul>
+            <li><strong>Day 1-2:</strong> E2E quote submission and acceptance.</li>
+            <li><strong>Day 3:</strong> Security tests - unauthorized access prevention.</li>
+            <li><strong>Day 4-5:</strong> Integration tests for dealer discovery automation.</li>
+        </ul>
+
+        <h3>Week 3: Important Features (P1)</h3>
+        <ul>
+            <li><strong>Day 1:</strong> E2E magic link registration.</li>
+            <li><strong>Day 2:</strong> E2E invite code validation (all scenarios).</li>
+            <li><strong>Day 3:</strong> E2E quote revision workflow.</li>
+            <li><strong>Day 4-5:</strong> Integration tests for email/SMS automation.</li>
+        </ul>
+
+        <!-- NOTES -->
+        <div class="notes" style="margin-top: 40px;">
+            <div class="notes-title">📝 Testing Best Practices for This Project</div>
+            <ul>
+                <li><strong>Use automation2@nmbli.app for all tests</strong> - Credentials: <code>hE0fp6keXcnITdPAsoHZ!Aa9</code></li>
+                <li><strong>Run tests before every push</strong> - User mandate: "test every single thoroughly prior to every push"</li>
+                <li><strong>Test data cleanup</strong> - Always clean up test briefs/quotes after tests complete</li>
+                <li><strong>Playwright debugging</strong> - Use <code>headless: false</code> and <code>slowMo: 100</code> when debugging</li>
+                <li><strong>Mock external services</strong> - Mock Gemini API, Twilio SMS, Gmail sending in tests</li>
+                <li><strong>Database state</strong> - Use transactions or cleanup scripts to reset state between tests</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 60px; padding-top: 20px; border-top: 2px solid #e0e0e0; color: #666; font-size: 0.9em;">
+            <p><strong>Generated:</strong> 2025-10-28</p>
+            <p><strong>Total Unit Tests:</strong> 65 passing</p>
+            <p><strong>Total E2E Tests:</strong> 1 created (failing)</p>
+            <p><strong>Test User:</strong> automation2@nmbli.app (buyer role)</p>
+        </div>
+    </div>
+</body>
+</html>
