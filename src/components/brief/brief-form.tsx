@@ -308,7 +308,7 @@ export function BriefForm() {
           <div className="space-y-1">
             <h2 className="text-lg font-bold">Vehicle preferences</h2>
             <p className="text-base text-muted-foreground">
-              Select the make and model you're interested in.
+              Select the make and model you&apos;re interested in.
             </p>
           </div>
           <VehicleSelector

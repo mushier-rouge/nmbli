@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreVertical, Trash2, Edit } from 'lucide-react';
+import { MoreVertical, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import Link from 'next/link';
@@ -13,7 +13,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { formatCurrency } from '@/lib/utils/number';

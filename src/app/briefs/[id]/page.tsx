@@ -326,7 +326,7 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
               <Card className="border-dashed border-2 lg:col-span-2">
                 <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                   <p className="text-base text-muted-foreground">
-                    We're finding nearby dealers for you. Check back soon!
+                    We&apos;re finding nearby dealers for you. Check back soon!
                   </p>
                 </CardContent>
               </Card>
