@@ -4,9 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronsUpDown, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getAllMakes, getModelsForMakes, vehicles } from '@/lib/data/vehicles';
+
+const OTHER_MODEL_VALUE = '__other_model__';
+const OTHER_TRIM_VALUE = '__other_trim__';
 
 type VehicleSelectorProps = {
   makes: string[];
@@ -28,6 +31,8 @@ export function VehicleSelector({
   const [showMakeDropdown, setShowMakeDropdown] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [showTrimDropdown, setShowTrimDropdown] = useState(false);
+  const [customModelText, setCustomModelText] = useState('');
+  const [customTrimText, setCustomTrimText] = useState('');
 
   const makeRef = useRef<HTMLDivElement>(null);
   const modelRef = useRef<HTMLDivElement>(null);
@@ -91,31 +96,36 @@ export function VehicleSelector({
   };
 
   const toggleModel = (model: string) => {
-    const newModels = models.includes(model)
-      ? models.filter((m) => m !== model)
-      : [...models, model];
+    console.log('[VehicleSelector] toggleModel START', { model, currentModels: models, type: typeof model });
+    // Only allow selecting one model at a time - if clicking the same model, deselect it
+    const newModels = models.includes(model) ? [] : [model];
+    console.log('[VehicleSelector] toggleModel calling onModelsChange', { newModels });
     onModelsChange(newModels);
+    console.log('[VehicleSelector] toggleModel END');
 
-    // Clear trims that are no longer available
-    const newAvailableTrims = Array.from(
-      new Set(
-        makes.flatMap((make) =>
-          vehicles[make]?.flatMap((modelData) =>
-            newModels.includes(modelData.model) ? modelData.trims : []
-          ) || []
-        )
-      )
-    );
-    const filteredTrims = trims.filter((t) => newAvailableTrims.includes(t));
-    if (filteredTrims.length !== trims.length) {
-      onTrimsChange(filteredTrims);
+    // Clear trims when changing models
+    if (newModels.length === 0 || newModels[0] !== models[0]) {
+      onTrimsChange([]);
+    }
+
+    // Clear custom model text if switching away from "Other"
+    if (model !== OTHER_MODEL_VALUE) {
+      setCustomModelText('');
     }
   };
 
   const toggleTrim = (trim: string) => {
-    onTrimsChange(
-      trims.includes(trim) ? trims.filter((t) => t !== trim) : [...trims, trim]
-    );
+    console.log('[VehicleSelector] toggleTrim START', { trim, currentTrims: trims, type: typeof trim });
+    // Only allow selecting one trim at a time - if clicking the same trim, deselect it
+    const newTrims = trims.includes(trim) ? [] : [trim];
+    console.log('[VehicleSelector] toggleTrim calling onTrimsChange', { newTrims });
+    onTrimsChange(newTrims);
+    console.log('[VehicleSelector] toggleTrim END');
+
+    // Clear custom trim text if switching away from "Other"
+    if (trim !== OTHER_TRIM_VALUE) {
+      setCustomTrimText('');
+    }
   };
 
   const removeMake = (make: string) => {
@@ -204,7 +214,7 @@ export function VehicleSelector({
 
       {/* Models Selector */}
       <div className="space-y-2" ref={modelRef}>
-        <label className="text-sm font-medium">Models</label>
+        <label className="text-sm font-medium">Model</label>
         <div className="relative">
           <Button
             type="button"
@@ -216,28 +226,47 @@ export function VehicleSelector({
             onClick={() => setShowModelDropdown(!showModelDropdown)}
           >
             {models.length > 0
-              ? `${models.length} selected`
+              ? models[0] === OTHER_MODEL_VALUE
+                ? `Other: ${customModelText || '...'}`
+                : models[0]
               : makes.length === 0
-              ? 'Select makes first...'
-              : 'Select models...'}
+              ? 'Select make first...'
+              : 'Select model...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
           {showModelDropdown && availableModels.length > 0 && (
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
-              <div className="p-2 space-y-1">
-                {availableModels.map((model) => (
+              <RadioGroup value={models[0] || ''} onValueChange={toggleModel}>
+                <div className="p-2 space-y-1">
+                  {availableModels.map((model) => (
+                    <label
+                      key={model}
+                      className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
+                    >
+                      <RadioGroupItem value={model} id={`model-${model}`} />
+                      <span className="text-sm">{model}</span>
+                    </label>
+                  ))}
                   <label
-                    key={model}
+                    key="other"
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
                   >
-                    <Checkbox
-                      checked={models.includes(model)}
-                      onCheckedChange={() => toggleModel(model)}
-                    />
-                    <span className="text-sm">{model}</span>
+                    <RadioGroupItem value={OTHER_MODEL_VALUE} id="model-other" />
+                    <span className="text-sm">Other</span>
                   </label>
-                ))}
-              </div>
+                </div>
+              </RadioGroup>
+              {models[0] === OTHER_MODEL_VALUE && (
+                <div className="px-2 pb-2">
+                  <Input
+                    placeholder="Specify model (max 40 chars)"
+                    maxLength={40}
+                    value={customModelText}
+                    onChange={(e) => setCustomModelText(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -246,18 +275,20 @@ export function VehicleSelector({
             {models
               .filter(model => model != null && model !== '')
               .map((model) => {
-                const modelStr = String(model);
+                const displayText = model === OTHER_MODEL_VALUE
+                  ? `Other: ${customModelText || '...'}`
+                  : String(model);
                 return (
                   <div
-                    key={modelStr}
+                    key={model}
                     className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
                   >
-                    <span>{modelStr}</span>
+                    <span>{displayText}</span>
                     <button
                       type="button"
                       onClick={() => removeModel(model)}
                       className="inline-flex items-center hover:text-destructive"
-                      aria-label={`Remove ${modelStr}`}
+                      aria-label={`Remove ${displayText}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -270,7 +301,7 @@ export function VehicleSelector({
 
       {/* Trims Selector */}
       <div className="space-y-2" ref={trimRef}>
-        <label className="text-sm font-medium">Preferred trims (optional)</label>
+        <label className="text-sm font-medium">Preferred trim (optional)</label>
         <div className="relative">
           <Button
             type="button"
@@ -282,28 +313,47 @@ export function VehicleSelector({
             onClick={() => setShowTrimDropdown(!showTrimDropdown)}
           >
             {trims.length > 0
-              ? `${trims.length} selected`
+              ? trims[0] === OTHER_TRIM_VALUE
+                ? `Other: ${customTrimText || '...'}`
+                : trims[0]
               : models.length === 0
-              ? 'Select models first...'
-              : 'Select trims (optional)...'}
+              ? 'Select model first...'
+              : 'Select trim (optional)...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
-          {showTrimDropdown && availableTrims.length > 0 && (
+          {showTrimDropdown && models.length > 0 && (
             <div className="absolute top-full mt-1 z-50 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
-              <div className="p-2 space-y-1">
-                {availableTrims.map((trim) => (
+              <RadioGroup value={trims[0] || ''} onValueChange={toggleTrim}>
+                <div className="p-2 space-y-1">
+                  {availableTrims.map((trim) => (
+                    <label
+                      key={trim}
+                      className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
+                    >
+                      <RadioGroupItem value={trim} id={`trim-${trim}`} />
+                      <span className="text-sm">{trim}</span>
+                    </label>
+                  ))}
                   <label
-                    key={trim}
+                    key="other"
                     className="flex items-center space-x-2 px-2 py-1.5 hover:bg-accent rounded-sm cursor-pointer"
                   >
-                    <Checkbox
-                      checked={trims.includes(trim)}
-                      onCheckedChange={() => toggleTrim(trim)}
-                    />
-                    <span className="text-sm">{trim}</span>
+                    <RadioGroupItem value={OTHER_TRIM_VALUE} id="trim-other" />
+                    <span className="text-sm">Other</span>
                   </label>
-                ))}
-              </div>
+                </div>
+              </RadioGroup>
+              {trims[0] === OTHER_TRIM_VALUE && (
+                <div className="px-2 pb-2">
+                  <Input
+                    placeholder="Specify trim (max 40 chars)"
+                    maxLength={40}
+                    value={customTrimText}
+                    onChange={(e) => setCustomTrimText(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -312,18 +362,20 @@ export function VehicleSelector({
             {trims
               .filter(trim => trim != null && trim !== '')
               .map((trim) => {
-                const trimStr = String(trim);
+                const displayText = trim === OTHER_TRIM_VALUE
+                  ? `Other: ${customTrimText || '...'}`
+                  : String(trim);
                 return (
                   <div
-                    key={trimStr}
+                    key={trim}
                     className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
                   >
-                    <span>{trimStr}</span>
+                    <span>{displayText}</span>
                     <button
                       type="button"
                       onClick={() => removeTrim(trim)}
                       className="inline-flex items-center hover:text-destructive"
-                      aria-label={`Remove ${trimStr}`}
+                      aria-label={`Remove ${displayText}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
