@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const magicLinkSchema = z.object({
   email: z.string().email(),
-  inviteCode: z.string().min(1, 'Invite code is required'),
+  inviteCode: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -144,7 +144,7 @@ export function LoginForm() {
                   name="inviteCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Invite Code</FormLabel>
+                      <FormLabel>Invite Code <span className="text-xs text-muted-foreground">(required for new users)</span></FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., testdrive" type="text" {...field} />
                       </FormControl>

@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 
 const requestSchema = z.object({
   email: z.string().email(),
-  inviteCode: z.string().min(1, 'Invite code is required'),
+  inviteCode: z.string().optional(), // Optional - only required for new users
   roleHint: z.enum(['buyer', 'dealer', 'ops']).default('buyer'),
   redirectTo: z
     .string()
@@ -21,19 +21,35 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { email, inviteCode, roleHint, redirectTo } = requestSchema.parse(body);
 
-  // Validate invite code before sending magic link
-  const invite = await prisma.inviteCode.findUnique({
-    where: { code: inviteCode.toLowerCase().trim() },
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
   });
 
-  if (!invite) {
-    debugAuth('magic-link', 'Invalid invite code', { inviteCode });
-    return NextResponse.json({ message: 'Invalid invite code' }, { status: 400 });
-  }
+  // For new users, invite code is required
+  if (!existingUser) {
+    if (!inviteCode || inviteCode.trim() === '') {
+      debugAuth('magic-link', 'New user missing invite code', { email });
+      return NextResponse.json({ message: 'Invite code is required for new signups' }, { status: 400 });
+    }
 
-  if (invite.usedAt) {
-    debugAuth('magic-link', 'Invite code already used', { inviteCode, usedAt: invite.usedAt });
-    return NextResponse.json({ message: 'Invite code has already been used' }, { status: 400 });
+    // Validate invite code
+    const invite = await prisma.inviteCode.findUnique({
+      where: { code: inviteCode.toLowerCase().trim() },
+    });
+
+    if (!invite) {
+      debugAuth('magic-link', 'Invalid invite code', { inviteCode });
+      return NextResponse.json({ message: 'Invalid invite code' }, { status: 400 });
+    }
+
+    if (invite.usedAt) {
+      debugAuth('magic-link', 'Invite code already used', { inviteCode, usedAt: invite.usedAt });
+      return NextResponse.json({ message: 'Invite code has already been used' }, { status: 400 });
+    }
+  } else {
+    debugAuth('magic-link', 'Existing user - invite code not required', { email });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
