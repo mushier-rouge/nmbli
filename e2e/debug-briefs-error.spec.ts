@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Debug React Error #185 on /briefs page', () => {
-  test('reproduce and capture React error after login', async ({ page }) => {
+  test.skip('reproduce and capture React error after login', async ({ page }) => {
+    // Skipped: This is a debugging test for manual investigation, not automated testing
     const consoleLogs: string[] = [];
     const consoleErrors: string[] = [];
     const pageErrors: Error[] = [];
