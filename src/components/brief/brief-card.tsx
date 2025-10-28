@@ -117,13 +117,6 @@ export function BriefCard({ brief }: BriefCardProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/briefs/${brief.id}/edit`} className="flex items-center">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit brief
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={handleDelete}
