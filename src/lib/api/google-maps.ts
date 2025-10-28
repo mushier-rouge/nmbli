@@ -69,9 +69,12 @@ export async function findDealersInState(params: {
           const addressComponents = details.address_components || [];
 
           // Extract city, state, zipcode from address components
-          const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
-          const stateCode = addressComponents.find(c => c.types.includes('administrative_area_level_1'))?.short_name || state;
-          const zipcode = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const city = addressComponents.find(c => c.types.includes('locality' as any))?.long_name || '';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const stateCode = addressComponents.find(c => c.types.includes('administrative_area_level_1' as any))?.short_name || state;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const zipcode = addressComponents.find(c => c.types.includes('postal_code' as any))?.long_name || '';
 
           // Skip if not in the correct state
           if (stateCode.toUpperCase() !== state.toUpperCase()) {
