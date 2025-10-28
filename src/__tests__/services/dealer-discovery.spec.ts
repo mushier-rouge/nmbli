@@ -22,6 +22,10 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findMany: vi.fn(),
     },
+    dealerProspect: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -55,7 +59,9 @@ describe('Dealer Discovery Service', () => {
       vi.mocked(prisma.brief.findUnique).mockResolvedValue(mockBrief as any);
       vi.mocked(findDealersInState).mockResolvedValue(mockDealers as any);
       vi.mocked(prisma.dealership.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.dealership.create).mockResolvedValue(mockDealers[0] as any);
+      vi.mocked(prisma.dealership.create).mockResolvedValue({ ...mockDealers[0], id: 'dealer-1' } as any);
+      vi.mocked(prisma.dealerProspect.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.dealerProspect.create).mockResolvedValue({ id: 'prospect-1' } as any);
 
       const result = await discoverDealersForBrief('brief-123');
 
@@ -103,7 +109,11 @@ describe('Dealer Discovery Service', () => {
         .mockResolvedValueOnce(hondaDealers as any)
         .mockResolvedValueOnce(toyotaDealers as any);
       vi.mocked(prisma.dealership.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.dealership.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.dealership.create)
+        .mockResolvedValueOnce({ ...hondaDealers[0], id: 'dealer-1' } as any)
+        .mockResolvedValueOnce({ ...toyotaDealers[0], id: 'dealer-2' } as any);
+      vi.mocked(prisma.dealerProspect.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.dealerProspect.create).mockResolvedValue({ id: 'prospect-1' } as any);
 
       const result = await discoverDealersForBrief('brief-123');
 

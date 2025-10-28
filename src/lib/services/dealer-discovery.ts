@@ -31,15 +31,15 @@ export async function discoverDealersForBrief(briefId: string) {
           });
 
           // Check if dealer already exists
-          const existing = await prisma.dealership.findFirst({
+          let dealership = await prisma.dealership.findFirst({
             where: {
               name: validatedDealer.name,
               city: validatedDealer.city,
             },
           });
 
-          if (!existing) {
-            await prisma.dealership.create({
+          if (!dealership) {
+            dealership = await prisma.dealership.create({
               data: {
                 name: validatedDealer.name,
                 make,
@@ -51,6 +51,34 @@ export async function discoverDealersForBrief(briefId: string) {
                 website: validatedDealer.website || null,
                 email: validatedDealer.email || null,
                 verified: false,
+              },
+            });
+          }
+
+          // Create DealerProspect to link this dealership to the brief
+          const existingProspect = await prisma.dealerProspect.findFirst({
+            where: {
+              briefId,
+              name: dealership.name,
+              city: dealership.city,
+            },
+          });
+
+          if (!existingProspect) {
+            await prisma.dealerProspect.create({
+              data: {
+                briefId,
+                dealerId: dealership.id,
+                name: dealership.name,
+                brand: make,
+                city: dealership.city,
+                state: dealership.state,
+                zipcode: dealership.zipcode,
+                address: dealership.address,
+                phone: dealership.phone,
+                email: dealership.email,
+                website: dealership.website,
+                source: 'google_maps',
               },
             });
           }
