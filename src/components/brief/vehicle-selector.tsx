@@ -143,10 +143,10 @@ export function VehicleSelector({
   };
 
   return (
-    <div className="space-y-4" data-v="2">
+    <div className="space-y-6" data-v="2">
       {/* Make Selector */}
       <div className="space-y-2" ref={makeRef}>
-        <label className="text-sm font-medium">Make</label>
+        <label className="text-base font-semibold">Make</label>
         <div className="relative">
           <Button
             type="button"
@@ -206,7 +206,7 @@ export function VehicleSelector({
 
       {/* Models Selector */}
       <div className="space-y-2" ref={modelRef}>
-        <label className="text-sm font-medium">Model</label>
+        <label className="text-base font-semibold">Model</label>
         <div className="relative">
           <Button
             type="button"
@@ -293,7 +293,7 @@ export function VehicleSelector({
 
       {/* Trims Selector */}
       <div className="space-y-2" ref={trimRef}>
-        <label className="text-sm font-medium">Preferred trim (optional)</label>
+        <label className="text-base font-semibold">Preferred trim (optional)</label>
         <div className="relative">
           <Button
             type="button"

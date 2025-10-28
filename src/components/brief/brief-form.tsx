@@ -304,20 +304,28 @@ export function BriefForm() {
           {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
         </section>
 
-        <VehicleSelector
-          makes={form.watch('makes')}
-          models={form.watch('models')}
-          trims={form.watch('trims') || []}
-          onMakesChange={(makes) => form.setValue('makes', makes, { shouldValidate: true })}
-          onModelsChange={(models) => form.setValue('models', models, { shouldValidate: true })}
-          onTrimsChange={(trims) => form.setValue('trims', trims, { shouldValidate: false })}
-        />
-        {form.formState.errors.makes && (
-          <p className="text-sm text-destructive">{form.formState.errors.makes.message}</p>
-        )}
-        {form.formState.errors.models && (
-          <p className="text-sm text-destructive">{form.formState.errors.models.message}</p>
-        )}
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold">Vehicle preferences</h2>
+            <p className="text-base text-muted-foreground">
+              Select the make and model you're interested in.
+            </p>
+          </div>
+          <VehicleSelector
+            makes={form.watch('makes')}
+            models={form.watch('models')}
+            trims={form.watch('trims') || []}
+            onMakesChange={(makes) => form.setValue('makes', makes, { shouldValidate: true })}
+            onModelsChange={(models) => form.setValue('models', models, { shouldValidate: true })}
+            onTrimsChange={(trims) => form.setValue('trims', trims, { shouldValidate: false })}
+          />
+          {form.formState.errors.makes && (
+            <p className="text-sm text-destructive">{form.formState.errors.makes.message}</p>
+          )}
+          {form.formState.errors.models && (
+            <p className="text-sm text-destructive">{form.formState.errors.models.message}</p>
+          )}
+        </section>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
