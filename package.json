@@ -26,6 +26,7 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "@google/genai": "^1.25.0",
     "@google/generative-ai": "^0.24.1",
+    "@googlemaps/google-maps-services-js": "^3.4.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.17.0",
     "@radix-ui/react-accordion": "^1.2.12",

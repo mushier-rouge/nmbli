@@ -98,16 +98,25 @@ async function createBrief(page: Page): Promise<string | null> {
   console.log('   Submitting brief...');
   await page.click('button[type="submit"]');
 
-  // Wait for success toast instead of navigation (form stays on same page)
-  await delay(2000);
+  // Wait for either success toast OR navigation to brief detail page
+  await delay(3000);
 
-  // Check for success toast message
+  // Check for success toast message OR navigation to /briefs/[id]
   const toastVisible = await page.locator('text="Brief created"').isVisible().catch(() => false);
+  const currentUrl = page.url();
+  const briefIdMatch = currentUrl.match(/\/briefs\/([a-f0-9\-]+)/i);
+  const navigatedToBrief = briefIdMatch && !currentUrl.endsWith('/new');
 
-  if (toastVisible) {
-    console.log('   ✅ Brief created successfully (toast confirmation)');
+  if (toastVisible || navigatedToBrief) {
+    console.log(`   ✅ Brief created successfully ${toastVisible ? '(toast confirmation)' : '(redirected to brief)'}`);
 
-    // Navigate to briefs list to get the brief ID
+    // If we're already on the brief page, extract the ID
+    if (navigatedToBrief && briefIdMatch) {
+      console.log(`   📋 Brief ID: ${briefIdMatch[1]}`);
+      return briefIdMatch[1];
+    }
+
+    // Otherwise navigate to briefs list to get the brief ID
     await page.goto(`${BASE_URL}/briefs`);
     await page.waitForLoadState('networkidle');
     await delay(1000);
@@ -251,6 +260,68 @@ async function triggerDealerDiscovery(page: Page, briefId: string) {
   }
 }
 
+async function verifyDealerDisplay(page: Page, briefId: string) {
+  console.log('\n👁️  Test 5: Verify Dealer Display');
+
+  if (!briefId) {
+    console.log('   ❌ FAIL: No brief ID provided');
+    return false;
+  }
+
+  try {
+    console.log(`   Navigating to brief detail page...`);
+    await page.goto(`${BASE_URL}/briefs/${briefId}`);
+    await page.waitForLoadState('networkidle');
+    await delay(1500);
+
+    // Look for the Dealers tab
+    console.log('   Looking for Dealers tab...');
+    const dealersTab = page.locator('[role="tab"]', { hasText: /Dealers/ });
+    const tabExists = await dealersTab.count() > 0;
+
+    if (!tabExists) {
+      console.log('   ❌ FAIL: Dealers tab not found');
+      await page.screenshot({ path: 'dealers-tab-missing.png' });
+      return false;
+    }
+
+    console.log('   ✅ Dealers tab found');
+
+    // Click on the Dealers tab
+    console.log('   Clicking Dealers tab...');
+    await dealersTab.click();
+    await delay(1000);
+
+    // Check if we can see dealer content (either dealer cards or empty state)
+    const dealerCards = await page.locator('[class*="grid"]').locator('[class*="card"]').count();
+    const emptyState = await page.locator('text="We\'re finding nearby dealers"').isVisible().catch(() => false);
+
+    if (dealerCards > 0) {
+      console.log(`   ✅ Found ${dealerCards} dealer card(s) displayed`);
+
+      // Try to read the first dealer's name
+      const firstDealerName = await page.locator('[class*="card"]').first().locator('[class*="text-xl"]').textContent().catch(() => null);
+      if (firstDealerName) {
+        console.log(`   📍 First dealer: ${firstDealerName.trim()}`);
+      }
+
+      return true;
+    } else if (emptyState) {
+      console.log('   ✅ Empty state displayed (no dealers found yet)');
+      return true;
+    } else {
+      console.log('   ❌ FAIL: Dealers tab content not loaded properly');
+      await page.screenshot({ path: 'dealers-tab-empty.png' });
+      return false;
+    }
+  } catch (error) {
+    console.error('   ❌ FAIL: Error verifying dealer display');
+    console.error(error);
+    await page.screenshot({ path: 'dealers-tab-error.png' }).catch(() => {});
+    return false;
+  }
+}
+
 async function runAllTests() {
   let browser: Browser | null = null;
   let page: Page | null = null;
@@ -275,8 +346,10 @@ async function runAllTests() {
     const createResult = briefId !== null;
 
     let dealerSearchResult = false;
+    let dealerDisplayResult = false;
     if (briefId) {
       dealerSearchResult = await triggerDealerDiscovery(page, briefId);
+      dealerDisplayResult = await verifyDealerDisplay(page, briefId);
     }
 
     // Always clean up ALL test briefs at the end
@@ -286,14 +359,16 @@ async function runAllTests() {
       login: loginResult,
       create: createResult,
       dealerDiscovery: dealerSearchResult,
+      dealerDisplay: dealerDisplayResult,
       cleanup: cleanupResult,
     };
-    
+
     console.log('\n' + '='.repeat(50));
     console.log('\n📊 Test Results:');
     console.log(`   Login: ${results.login ? '✅' : '❌'}`);
     console.log(`   Create Brief: ${results.create ? '✅' : '❌'}`);
     console.log(`   Dealer Discovery: ${results.dealerDiscovery ? '✅' : '❌'}`);
+    console.log(`   Dealer Display: ${results.dealerDisplay ? '✅' : '❌'}`);
     console.log(`   Cleanup Test Briefs: ${results.cleanup ? '✅' : '❌'}`);
     
     const passed = Object.values(results).filter(r => r).length;

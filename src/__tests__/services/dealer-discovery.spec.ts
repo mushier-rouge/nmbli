@@ -3,11 +3,11 @@ import {
   discoverDealersForBrief,
   getDealersForBrief,
 } from '@/lib/services/dealer-discovery';
-import { findDealersInState } from '@/lib/api/gemini';
+import { findDealersInState } from '@/lib/api/google-maps';
 import { prisma } from '@/lib/prisma';
 
-// Mock Gemini API
-vi.mock('@/lib/api/gemini', () => ({
+// Mock Google Maps API
+vi.mock('@/lib/api/google-maps', () => ({
   findDealersInState: vi.fn(),
 }));
 

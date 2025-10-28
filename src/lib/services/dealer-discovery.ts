@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { findDealersInState, type DealerInfo } from '@/lib/api/gemini';
+import { findDealersInState, type DealerInfo } from '@/lib/api/google-maps';
 import { dealerInfoSchema } from '@/lib/validation/dealer';
 
 export async function discoverDealersForBrief(briefId: string) {
