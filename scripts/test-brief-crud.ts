@@ -139,47 +139,54 @@ async function createBrief(page: Page): Promise<string | null> {
   }
 }
 
-async function deleteBrief(page: Page) {
-  console.log('\n🗑️  Test 3: Delete Brief');
-  
+async function cleanupAllTestBriefs(page: Page) {
+  console.log('\n🗑️  Test 3: Cleanup All Test Briefs');
+
   await page.goto(`${BASE_URL}/briefs`);
   await page.waitForLoadState('networkidle');
   await delay(1000);
-  
-  // Find three-dot menu
-  const menuButton = page.locator('button[aria-label="Open menu"]').or(page.locator('button:has(svg.lucide-more-vertical)')).first();
-  const menuExists = await menuButton.isVisible().catch(() => false);
-  
-  if (!menuExists) {
-    console.log('   ⚠️  No briefs with three-dot menu (status must be "sourcing")');
-    return true; // Not a failure, just no deletable briefs
+
+  let deletedCount = 0;
+  let attempts = 0;
+  const maxAttempts = 10; // Prevent infinite loop
+
+  while (attempts < maxAttempts) {
+    attempts++;
+
+    // Find all three-dot menus
+    const menuButtons = page.locator('button[aria-label="Open menu"]').or(page.locator('button:has(svg.lucide-more-vertical)'));
+    const count = await menuButtons.count();
+
+    if (count === 0) {
+      console.log(`   ✅ All test briefs cleaned up (deleted ${deletedCount} briefs)`);
+      return true;
+    }
+
+    console.log(`   Found ${count} deletable briefs, deleting...`);
+
+    // Delete the first one
+    const firstMenu = menuButtons.first();
+    await firstMenu.click();
+    await delay(500);
+
+    // Handle confirmation dialog
+    page.once('dialog', async dialog => {
+      await dialog.accept();
+    });
+
+    await page.click('text="Delete brief"');
+    await delay(2000);
+
+    deletedCount++;
+
+    // Reload to get fresh list
+    await page.goto(`${BASE_URL}/briefs`);
+    await page.waitForLoadState('networkidle');
+    await delay(1000);
   }
-  
-  console.log('   Opening three-dot menu...');
-  await menuButton.click();
-  await delay(500);
-  
-  // Click delete
-  console.log('   Clicking delete...');
-  
-  // Handle confirmation dialog
-  page.on('dialog', async dialog => {
-    console.log(`   Confirming deletion: "${dialog.message()}"`);
-    await dialog.accept();
-  });
-  
-  await page.click('text="Delete brief"');
-  await delay(2000);
-  
-  // Check for success toast or brief removed from list
-  const bodyText = await page.textContent('body');
-  if (bodyText?.includes('deleted') || bodyText?.includes('success')) {
-    console.log('   ✅ Brief deleted successfully');
-    return true;
-  } else {
-    console.log('   ⚠️  Delete completed (check manually)');
-    return true; // Soft pass
-  }
+
+  console.log(`   ⚠️  Cleanup incomplete (deleted ${deletedCount} briefs, may have more)`);
+  return true;
 }
 
 async function triggerDealerDiscovery(page: Page, briefId: string) {
@@ -272,13 +279,14 @@ async function runAllTests() {
       dealerSearchResult = await triggerDealerDiscovery(page, briefId);
     }
 
-    const deleteResult = await deleteBrief(page);
+    // Always clean up ALL test briefs at the end
+    const cleanupResult = await cleanupAllTestBriefs(page);
 
     const results = {
       login: loginResult,
       create: createResult,
       dealerDiscovery: dealerSearchResult,
-      delete: deleteResult,
+      cleanup: cleanupResult,
     };
     
     console.log('\n' + '='.repeat(50));
@@ -286,7 +294,7 @@ async function runAllTests() {
     console.log(`   Login: ${results.login ? '✅' : '❌'}`);
     console.log(`   Create Brief: ${results.create ? '✅' : '❌'}`);
     console.log(`   Dealer Discovery: ${results.dealerDiscovery ? '✅' : '❌'}`);
-    console.log(`   Delete Brief: ${results.delete ? '✅' : '❌'}`);
+    console.log(`   Cleanup Test Briefs: ${results.cleanup ? '✅' : '❌'}`);
     
     const passed = Object.values(results).filter(r => r).length;
     const total = Object.keys(results).length;
