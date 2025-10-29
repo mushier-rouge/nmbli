@@ -1,68 +1,61 @@
 #!/usr/bin/env tsx
 /**
- * Simple test for Gemini API dealer discovery
- *
- * Tests that the Gemini API can find dealerships
- * Usage: npm run test:gemini
+ * Test script to check if Google Maps API key works with Gemini
  */
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// Load environment variables
-config({ path: resolve(process.cwd(), '.env.local') });
+// Load .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-async function main() {
-  console.log('🚀 Testing Gemini API dealer discovery...\n');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-  // Check if API key is configured
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error('❌ GEMINI_API_KEY not found in environment');
-    console.error('Make sure it\'s set in .env.local');
+async function testGemini() {
+  if (!GEMINI_API_KEY) {
+    console.error('❌ GEMINI_API_KEY not found in .env.local');
     process.exit(1);
   }
 
-  console.log('✅ GEMINI_API_KEY found\n');
+  console.log('🧪 Testing Gemini API...\n');
 
-  // Import after env vars are loaded
-  const { findDealersInState } = await import('../src/lib/api/gemini');
-
-  // Test finding Toyota dealers in Washington
-  console.log('🔍 Finding Toyota dealers in Washington...');
   try {
-    const dealers = await findDealersInState({
-      make: 'Toyota',
-      state: 'WA',
-      count: 5,
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: 'Write a brief professional email requesting a quote for a 2024 Mazda CX-90 Premium. Keep it under 100 words.'
+            }]
+          }]
+        })
+      }
+    );
 
-    console.log(`\n✅ Found ${dealers.length} dealerships:\n`);
-
-    dealers.forEach((dealer, i) => {
-      console.log(`${i + 1}. ${dealer.name}`);
-      console.log(`   📍 ${dealer.address}`);
-      console.log(`   🏙️  ${dealer.city}, ${dealer.state} ${dealer.zipcode}`);
-      if (dealer.phone) console.log(`   📞 ${dealer.phone}`);
-      if (dealer.email) console.log(`   ✉️  ${dealer.email}`);
-      if (dealer.website) console.log(`   🌐 ${dealer.website}`);
-      console.log('');
-    });
-
-    console.log('Summary:');
-    console.log(`  Total dealers found: ${dealers.length}`);
-    console.log(`  Dealers with phone: ${dealers.filter(d => d.phone).length}`);
-    console.log(`  Dealers with email: ${dealers.filter(d => d.email).length}`);
-    console.log(`  Dealers with website: ${dealers.filter(d => d.website).length}`);
-
-    console.log('\n✅ Gemini API test successful!');
-  } catch (error) {
-    console.error('\n❌ Test failed:', error);
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('❌ Gemini API error:', response.status, error);
+      process.exit(1);
     }
+
+    const data = await response.json();
+
+    console.log('✅ Gemini API works!');
+    console.log('\n📧 Sample email generated:');
+    console.log('═'.repeat(50));
+    console.log(data.candidates[0].content.parts[0].text);
+    console.log('═'.repeat(50));
+    console.log('\n✨ Ready to build quote request system!');
+
+  } catch (error) {
+    console.error('❌ Error testing Gemini:', error);
     process.exit(1);
   }
 }
 
-main();
+testGemini();

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ShadinessPill } from '@/components/brief/shadiness-pill';
 import { QuoteActions } from '@/components/brief/quote-actions';
+import { SendQuotesButton } from '@/components/brief/send-quotes-button';
 import { getBriefDetail } from '@/lib/services/briefs';
 import { listDealerProspects } from '@/lib/services/dealer-prospects';
 import { getSessionContext } from '@/lib/auth/session';
@@ -108,9 +109,12 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
               )}
             </div>
           </div>
-          <Button asChild variant="outline">
-            <Link href="/briefs">Back to briefs</Link>
-          </Button>
+          <div className="flex gap-2">
+            <SendQuotesButton briefId={id} />
+            <Button asChild variant="outline">
+              <Link href="/briefs">Back to briefs</Link>
+            </Button>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {TIMELINE_STEPS.map((step) => {
