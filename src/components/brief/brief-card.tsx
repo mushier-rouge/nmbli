@@ -88,9 +88,6 @@ export function BriefCard({ brief }: BriefCardProps) {
     brief.paymentType
   );
 
-  // Only allow edit/delete when brief is in "sourcing" status
-  const canEdit = brief.status === 'sourcing';
-
   return (
     <Card className="flex h-full flex-col justify-between hover:shadow-lg transition-shadow">
       <CardHeader className="space-y-3">
@@ -104,8 +101,7 @@ export function BriefCard({ brief }: BriefCardProps) {
             <Badge variant="outline" className="capitalize text-sm font-semibold px-3 py-1">
               <span>{String(brief.status)}</span>
             </Badge>
-            {canEdit && (
-              <DropdownMenu>
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -129,7 +125,6 @@ export function BriefCard({ brief }: BriefCardProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
           </div>
         </div>
         <p className="text-base text-muted-foreground font-medium">
