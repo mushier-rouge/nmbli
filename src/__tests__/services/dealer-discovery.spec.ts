@@ -69,6 +69,7 @@ describe('Dealer Discovery Service', () => {
       expect(findDealersInState).toHaveBeenCalledWith({
         make: 'Toyota',
         state: expect.any(String),
+        zipcode: '90210',
         count: 15,
       });
       expect(result).toHaveLength(1);

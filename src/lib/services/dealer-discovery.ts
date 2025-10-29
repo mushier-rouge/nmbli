@@ -20,7 +20,12 @@ export async function discoverDealersForBrief(briefId: string) {
   // Find dealers for each make
   for (const make of brief.makes) {
     try {
-      const dealers = await findDealersInState({ make, state, count: 15 });
+      const dealers = await findDealersInState({
+        make,
+        state,
+        zipcode: brief.zipcode,
+        count: 15
+      });
 
       // Validate and store dealers
       for (const dealer of dealers) {
