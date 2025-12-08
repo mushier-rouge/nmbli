@@ -37,10 +37,10 @@ export function LoginForm(props: LoginFormProps) {
 
         if (error) {
             console.error(error);
-            return toast.error('Something went wrong. Please try again.');
+            return toast.error(error.message || 'Something went wrong. Please try again.');
         }
 
-        toast.success('Check your email for a login link!');
+        toast.success('Check your email for a login link! (v2)');
     }
 
     return (
