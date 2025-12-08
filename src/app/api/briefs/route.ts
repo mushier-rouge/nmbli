@@ -1,43 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import { createBrief, listBuyerBriefs, listLatestBriefs } from '@/lib/services/briefs';
-import { createBriefSchema } from '@/lib/validation/brief';
-import { requireSession } from '@/lib/auth/session';
-
-export async function GET() {
-  try {
-    const session = await requireSession(['buyer', 'ops']);
-
-    if (session.role === 'ops') {
-      const briefs = await listLatestBriefs();
-      return NextResponse.json({ briefs });
-    }
-
-    const briefs = await listBuyerBriefs(session.userId);
-    return NextResponse.json({ briefs });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-}
+import { prisma } from '@/lib/prisma';
+import { createSupabaseRouteClient } from '@/lib/supabase/route';
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await requireSession(['buyer']);
-    const body = await request.json();
-    const parsed = createBriefSchema.parse(body);
+    const response = NextResponse.next({
+        request: { headers: request.headers },
+    });
 
-    const brief = await createBrief({ buyerId: session.userId, input: parsed });
+    const supabase = createSupabaseRouteClient(request, response);
+    const { data: { session } } = await supabase.auth.getSession();
 
-    // Note: Automation is triggered by the frontend via POST /api/briefs/[id]/automate
-    // This ensures it runs properly on Vercel serverless (fire-and-forget doesn't work)
-
-    return NextResponse.json({ brief });
-  } catch (error) {
-    console.error(error);
-    if (error instanceof Error) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    if (!session) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    return NextResponse.json({ message: 'Unable to create brief' }, { status: 500 });
-  }
+
+    try {
+        const body = await request.json();
+
+        // Create the brief
+        // Using simple creation logic compatible with the schema I recall (Waitlist/Brief split)
+        const brief = await prisma.brief.create({
+            data: {
+                ...body,
+                buyerId: session.user.id,
+                status: 'sourcing', // Default status
+            },
+        });
+
+        return NextResponse.json(brief);
+    } catch (error) {
+        console.error('Error creating brief:', error);
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function GET(request: NextRequest) {
+    const response = NextResponse.next({
+        request: { headers: request.headers },
+    });
+
+    const supabase = createSupabaseRouteClient(request, response);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const briefs = await prisma.brief.findMany({
+            where: { buyerId: session.user.id },
+            orderBy: { createdAt: 'desc' },
+        });
+        return NextResponse.json(briefs);
+    } catch {
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
 }

@@ -1,58 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import { canAccessBrief } from '@/lib/auth/roles';
-import { requireSession } from '@/lib/auth/session';
-import { getBriefDetail } from '@/lib/services/briefs';
 import { prisma } from '@/lib/prisma';
+import { createSupabaseRouteClient } from '@/lib/supabase/route';
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const session = await requireSession(['buyer', 'ops']);
-    const { id } = await params;
-    const brief = await getBriefDetail(id);
+export async function DELETE(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
+    const response = NextResponse.next({
+        request: { headers: request.headers },
+    });
 
-    if (!brief) {
-      return NextResponse.json({ message: 'Brief not found' }, { status: 404 });
+    const supabase = createSupabaseRouteClient(request, response);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!canAccessBrief(session, brief.buyerId)) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    try {
+        // Verify ownership
+        const brief = await prisma.brief.findUnique({
+            where: { id },
+        });
 
-    return NextResponse.json({ brief });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: 'Could not fetch brief' }, { status: 500 });
-  }
+        if (!brief) {
+            return NextResponse.json({ message: 'Not Found' }, { status: 404 });
+        }
+
+        if (brief.buyerId !== session.user.id) {
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        }
+
+        await prisma.brief.delete({
+            where: { id },
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting brief:', error);
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const session = await requireSession(['buyer']);
-    const { id } = await params;
-
-    // Verify brief exists and belongs to user
-    const brief = await prisma.brief.findUnique({
-      where: { id },
-      select: { buyerId: true },
+export async function GET(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
+    const response = NextResponse.next({
+        request: { headers: request.headers },
     });
 
-    if (!brief) {
-      return NextResponse.json({ message: 'Brief not found' }, { status: 404 });
+    const supabase = createSupabaseRouteClient(request, response);
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!canAccessBrief(session, brief.buyerId)) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    try {
+        const brief = await prisma.brief.findUnique({
+            where: { id },
+            include: {
+                quotes: true,
+                timelineEvents: true,
+            }
+        });
+
+        if (!brief) {
+            return NextResponse.json({ message: 'Not Found' }, { status: 404 });
+        }
+
+        if (brief.buyerId !== session.user.id) {
+            // Optionally allow ops roles to read
+            return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+        }
+
+        return NextResponse.json(brief);
+    } catch (error) {
+        console.error('Error fetching brief:', error);
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
-
-    // Delete brief
-    await prisma.brief.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting brief:', error);
-    return NextResponse.json({ message: 'Could not delete brief' }, { status: 500 });
-  }
 }

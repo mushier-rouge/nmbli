@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BriefAutomationOrchestrator } from '@/lib/services/brief-automation';
+import { briefAutomation } from '@/lib/services/brief-automation';
 import { discoverDealersForBrief, getDealersForBrief } from '@/lib/services/dealer-discovery';
 import { gmailClient } from '@/lib/email/gmail';
 import { twilioClient } from '@/lib/sms/twilio';
@@ -39,6 +39,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     dealership: {
       update: vi.fn(),
+      findMany: vi.fn(), // Added mock for findMany based on implementation
     },
     emailMessage: {
       create: vi.fn(),
@@ -48,18 +49,21 @@ vi.mock('@/lib/prisma', () => ({
     },
     skyvernRun: {
       create: vi.fn(),
+      update: vi.fn(), // Added mock for update based on implementation
     },
   },
 }));
 
 describe('Brief Automation Orchestrator', () => {
-  let orchestrator: BriefAutomationOrchestrator;
+  const orchestrator = briefAutomation;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    orchestrator = new BriefAutomationOrchestrator();
     process.env.GMAIL_FROM_EMAIL = 'contact@nmbli.com';
     process.env.TWILIO_PHONE_NUMBER = '+15551234567';
+    // Default mocks
+    vi.mocked(prisma.dealership.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.skyvernRun.create).mockResolvedValue({ id: 'run-1' } as any);
   });
 
   describe('processBrief', () => {
@@ -87,6 +91,7 @@ describe('Brief Automation Orchestrator', () => {
       vi.mocked(prisma.brief.findUnique).mockResolvedValue(mockBrief as any);
       vi.mocked(discoverDealersForBrief).mockResolvedValue(undefined);
       vi.mocked(getDealersForBrief).mockResolvedValue(mockDealers as any);
+      vi.mocked(prisma.dealership.findMany).mockResolvedValue(mockDealers as any);
       vi.mocked(prisma.dealerContact.findFirst).mockResolvedValue(null);
       vi.mocked(gmailClient.sendEmail).mockResolvedValue('msg-123');
       vi.mocked(prisma.emailMessage.create).mockResolvedValue({} as any);
@@ -120,6 +125,7 @@ describe('Brief Automation Orchestrator', () => {
       vi.mocked(prisma.brief.findUnique).mockResolvedValue(mockBrief as any);
       vi.mocked(discoverDealersForBrief).mockResolvedValue(undefined);
       vi.mocked(getDealersForBrief).mockResolvedValue([]);
+      vi.mocked(prisma.dealership.findMany).mockResolvedValue([]);
       vi.mocked(prisma.brief.update).mockResolvedValue({} as any);
       vi.mocked(recordTimelineEvent).mockResolvedValue({} as any);
 

@@ -1,106 +1,46 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 
-import { debugAuth } from '@/lib/debug';
-import { prisma } from '@/lib/prisma';
-
-// Fixed NEXT_PUBLIC_APP_URL - rebuild to pick up corrected env var
-
-const requestSchema = z.object({
-  email: z.string().email(),
-  inviteCode: z.string().optional(), // Optional - only required for new users
-  roleHint: z.enum(['buyer', 'dealer', 'ops']).default('buyer'),
-  redirectTo: z
-    .string()
-    .url()
-    .optional(),
+const magicLinkSchema = z.object({
+    email: z.string().email(),
+    inviteCode: z.string().optional(),
 });
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { email, inviteCode, roleHint, redirectTo } = requestSchema.parse(body);
-
-  // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  });
-
-  // For new users, invite code is required
-  if (!existingUser) {
-    if (!inviteCode || inviteCode.trim() === '') {
-      debugAuth('magic-link', 'New user missing invite code', { email });
-      return NextResponse.json({ message: 'Invite code is required for new signups' }, { status: 400 });
-    }
-
-    // Validate invite code
-    const invite = await prisma.inviteCode.findUnique({
-      where: { code: inviteCode.toLowerCase().trim() },
+export async function POST(request: NextRequest) {
+    const response = NextResponse.next({
+        request: { headers: request.headers }
     });
 
-    if (!invite) {
-      debugAuth('magic-link', 'Invalid invite code', { inviteCode });
-      return NextResponse.json({ message: 'Invalid invite code' }, { status: 400 });
+    try {
+        const body = await request.json();
+        const { email, inviteCode } = magicLinkSchema.parse(body);
+
+        const supabase = createSupabaseRouteClient(request, response);
+
+        // Pass invite code as metadata if present
+        const options: { emailRedirectTo: string; data?: { inviteCode: string } } = {
+            emailRedirectTo: `${new URL(request.url).origin}/api/auth/callback`,
+        };
+
+        if (inviteCode) {
+            options.data = { inviteCode };
+        }
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options,
+        });
+
+        if (error) {
+            return NextResponse.json({ message: error.message }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json({ message: error.issues[0].message }, { status: 400 });
+        }
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
-
-    if (invite.usedAt) {
-      debugAuth('magic-link', 'Invite code already used', { inviteCode, usedAt: invite.usedAt });
-      return NextResponse.json({ message: 'Invite code has already been used' }, { status: 400 });
-    }
-  } else {
-    debugAuth('magic-link', 'Existing user - invite code not required', { email });
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json({ message: 'Supabase env vars missing' }, { status: 500 });
-  }
-
-  debugAuth('magic-link', 'Request received', {
-    email,
-    roleHint,
-    redirectTo,
-    headers: Object.fromEntries(request.headers.entries()),
-  });
-
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const nextParam = redirectTo ? encodeURIComponent(redirectTo) : '';
-  const redirect = `${appUrl}/auth/callback${nextParam ? `?next=${nextParam}` : ''}`;
-
-  debugAuth('magic-link', 'Sending OTP with redirect', {
-    email,
-    appUrl,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    redirect,
-    allEnvVars: Object.keys(process.env).filter(k => k.includes('APP_URL')),
-  });
-
-  const { error } = await client.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: redirect,
-      data: {
-        role: roleHint,
-        inviteCode,
-      },
-    },
-  });
-
-  if (error) {
-    debugAuth('magic-link', 'Failed to send magic link', { email, error: error.message });
-    return NextResponse.json({ message: error.message }, { status: 400 });
-  }
-
-  debugAuth('magic-link', 'Magic link sent', { email, redirect });
-  return NextResponse.json({ message: 'Magic link sent' });
 }
