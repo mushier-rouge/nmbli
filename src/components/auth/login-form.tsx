@@ -62,6 +62,9 @@ export function LoginForm(props: LoginFormProps) {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
+                        <div className="text-[10px] text-muted-foreground/50 text-center">
+                            Target: {process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(8, 20)}...
+                        </div>
                     </div>
                     <Button disabled={isLoading}>
                         {isLoading && (
