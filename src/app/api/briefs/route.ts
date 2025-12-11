@@ -15,6 +15,18 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        // Ensure User record exists (fallback for users who logged in before OAuth fix)
+        await prisma.user.upsert({
+            where: { id: session.user.id },
+            update: {},
+            create: {
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
+                role: 'buyer',
+            },
+        });
+
         const body = await request.json();
 
         // Whitelist the fields to be inserted into the database
