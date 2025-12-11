@@ -17,14 +17,41 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
+        // Whitelist the fields to be inserted into the database
+        const {
+            zipcode,
+            paymentType,
+            maxOTD,
+            makes,
+            models,
+            trims,
+            colors,
+            mustHaves,
+            timelinePreference,
+            paymentPreferences,
+        } = body;
+
+        const briefData: any = {
+            buyerId: session.user.id,
+            status: 'sourcing', // Default status
+            zipcode,
+            paymentType,
+            maxOTD,
+            makes,
+            models,
+            trims,
+            colors,
+            mustHaves,
+            timelinePreference,
+        };
+
+        if (paymentPreferences) {
+            briefData.paymentPreferences = paymentPreferences;
+        }
+
         // Create the brief
-        // Using simple creation logic compatible with the schema I recall (Waitlist/Brief split)
         const brief = await prisma.brief.create({
-            data: {
-                ...body,
-                buyerId: session.user.id,
-                status: 'sourcing', // Default status
-            },
+            data: briefData,
         });
 
         return NextResponse.json(brief);
