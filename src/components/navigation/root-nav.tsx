@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTransition } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -21,26 +21,30 @@ const NAV_LINKS = [
 export function RootNav({ session }: RootNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[DEBUG][RootNav] render', {
       pathname,
       hasSession: Boolean(session),
       sessionEmail: session?.email,
-      isPending,
+      isSigningOut,
       timestamp: new Date().toISOString(),
     });
   }
 
   async function handleSignOut() {
-    startTransition(async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
       console.log('[DEBUG][RootNav] sign out start', { timestamp: new Date().toISOString() });
       await fetch('/api/auth/logout', { method: 'POST' });
       // Refresh to ensure server components pick up cleared session cookies
       router.refresh();
       router.push('/login');
-    });
+    } finally {
+      setIsSigningOut(false);
+    }
   }
 
   return (
@@ -61,7 +65,7 @@ export function RootNav({ session }: RootNavProps) {
               </Link>
             ))}
             <span className="hidden text-xs text-muted-foreground sm:inline">{session.email}</span>
-            <Button size="sm" variant="outline" onClick={handleSignOut} disabled={isPending}>
+            <Button size="sm" variant="outline" onClick={handleSignOut} disabled={isSigningOut}>
               Sign out
             </Button>
           </div>
