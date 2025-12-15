@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatCurrency } from '@/lib/utils/number';
 import { formatPaymentSummary } from '@/lib/utils/payment';
+import { formatDateLabel } from '@/lib/utils/date';
 
 type BriefCardProps = {
   brief: {
@@ -165,7 +166,7 @@ export function BriefCard({ brief }: BriefCardProps) {
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          Last updated {new Date(brief.updatedAt).toLocaleDateString()}
+          Last updated {formatDateLabel(brief.updatedAt)}
         </p>
       </CardContent>
       <CardFooter className="pt-4">

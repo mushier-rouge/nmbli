@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { apiDiscoverDealerProspects, apiUpdateDealerProspectStatus } from '@/lib/api/client';
+import { formatDateLabel } from '@/lib/utils/date';
 
 const formSchema = z.object({
   brands: z.string().min(2, 'Enter at least one brand'),
@@ -323,13 +324,13 @@ export function DealerProspectsPanel({ briefId, defaultZip, defaultBrands, prosp
                   </Select>
                   {prospect.lastContactedAt && (
                     <span className="text-xs text-muted-foreground">
-                      Last contacted {new Date(prospect.lastContactedAt).toLocaleDateString()}
+                      Last contacted {formatDateLabel(prospect.lastContactedAt)}
                     </span>
                   )}
                 </div>
               </CardContent>
               <CardFooter className="text-xs text-muted-foreground">
-                Added {new Date(prospect.createdAt).toLocaleDateString()}
+                Added {formatDateLabel(prospect.createdAt)}
               </CardFooter>
             </Card>
           ))

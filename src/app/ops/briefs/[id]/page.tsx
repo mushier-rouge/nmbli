@@ -11,6 +11,7 @@ import { getSessionContext } from '@/lib/auth/session';
 import { getBriefDetail } from '@/lib/services/briefs';
 import { listDealers } from '@/lib/services/dealers';
 import { formatPaymentSummary as formatPaymentSummaries } from '@/lib/utils/payment';
+import { formatDateLabel } from '@/lib/utils/date';
 import { formatCurrency } from '@/lib/utils/number';
 import { getQuoteStatusLabel, getQuoteStatusVariant } from '@/lib/constants/status';
 
@@ -92,7 +93,7 @@ export default async function OpsBriefDetailPage({ params }: { params: Promise<{
                         {invite.state}
                       </Badge>
                     </TableCell>
-                    <TableCell>{invite.expiresAt.toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDateLabel(invite.expiresAt)}</TableCell>
                     <TableCell>
                       <code className="text-xs">/d/{invite.magicLinkToken}</code>
                     </TableCell>

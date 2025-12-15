@@ -14,6 +14,7 @@ import { listDealerProspects } from '@/lib/services/dealer-prospects';
 import { getSessionContext } from '@/lib/auth/session';
 import { canAccessBrief } from '@/lib/auth/roles';
 import { formatCurrency, formatPercent } from '@/lib/utils/number';
+import { formatDateLabel } from '@/lib/utils/date';
 
 // Revalidate every 60 seconds - fresh quote data without force-dynamic
 export const revalidate = 60;
@@ -178,7 +179,7 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
                     </div>
                     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                       <span>
-                        VIN {quote.vin ?? '—'} · ETA {quote.etaDate ? quote.etaDate.toLocaleDateString() : '—'}
+                        VIN {quote.vin ?? '—'} · ETA {formatDateLabel(quote.etaDate)}
                       </span>
                       <span>
                         MSRP {quote.msrp ? formatCurrency(quote.msrp.toNumber()) : '—'} · Discount{' '}
@@ -319,9 +320,8 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ id
                   </CardContent>
                   <CardFooter className="text-xs text-muted-foreground">
                     {dealer.lastContactedAt
-                      ? `Last contacted ${new Date(dealer.lastContactedAt).toLocaleDateString()}`
-                      : `Discovered ${new Date(dealer.createdAt).toLocaleDateString()}`
-                    }
+                      ? `Last contacted ${formatDateLabel(dealer.lastContactedAt)}`
+                      : `Discovered ${formatDateLabel(dealer.createdAt)}`}
                   </CardFooter>
                 </Card>
               );
