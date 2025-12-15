@@ -4,6 +4,15 @@ import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { sanitizeEnvValue } from '@/lib/utils/env';
 import type { Prisma } from '@/generated/prisma';
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    let timer: NodeJS.Timeout;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export async function POST(request: NextRequest) {
     const start = Date.now();
     console.log('[API] /api/briefs POST Request received');
@@ -22,7 +31,11 @@ export async function POST(request: NextRequest) {
 
     console.log('[API] /api/briefs reading Supabase session...');
     const supabase = createSupabaseRouteClient(request, response);
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await withTimeout(
+        supabase.auth.getSession(),
+        8000,
+        'supabase.auth.getSession'
+    );
 
     if (sessionError) {
         console.error('[API] /api/briefs session error', sessionError.message);
@@ -38,17 +51,21 @@ export async function POST(request: NextRequest) {
     try {
         // Ensure User record exists (fallback for users who logged in before OAuth fix)
         console.log('[API] /api/briefs Upserting user record...');
-        await prisma.user.upsert({
-            where: { id: session.user.id },
-            update: {},
-            create: {
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
-                role: 'buyer',
-            },
-        });
-        console.log('[API] /api/briefs User record upserted.');
+        await withTimeout(
+            prisma.user.upsert({
+                where: { id: session.user.id },
+                update: {},
+                create: {
+                    id: session.user.id,
+                    email: session.user.email!,
+                    name: session.user.user_metadata?.full_name || session.user.email!.split('@')[0],
+                    role: 'buyer',
+                },
+            }),
+            8000,
+            'prisma.user.upsert'
+        );
+        console.log('[API] /api/briefs User record upserted in', `${Date.now() - start}ms`);
 
         const body = await request.json();
         console.log('[API] /api/briefs Request body parsed.', Array.isArray(body) ? { type: 'array', length: body.length } : { keys: Object.keys(body ?? {}) });
@@ -84,9 +101,13 @@ export async function POST(request: NextRequest) {
 
         console.log('[API] /api/briefs Creating brief in database...');
         // Create the brief
-        const brief = await prisma.brief.create({
-            data: briefData,
-        });
+        const brief = await withTimeout(
+            prisma.brief.create({
+                data: briefData,
+            }),
+            8000,
+            'prisma.brief.create'
+        );
         console.log('[API] /api/briefs Brief created with ID:', brief.id, 'in', `${Date.now() - start}ms`);
 
         return NextResponse.json({ brief });
