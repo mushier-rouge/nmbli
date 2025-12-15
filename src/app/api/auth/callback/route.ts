@@ -6,20 +6,32 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const next = url.searchParams.get('next') ?? '/briefs';
+    const wantsJson = (request.headers.get('accept') ?? '').includes('application/json');
 
     if (!code) {
         console.warn('[Auth Callback] No code provided');
-        return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
+        const errorResponse = wantsJson
+            ? NextResponse.json({ ok: false, message: 'Missing code in callback' }, { status: 400 })
+            : NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
+        return errorResponse;
     }
 
-    const response = NextResponse.redirect(new URL(next, request.url));
+    const response = wantsJson
+        ? NextResponse.json({ ok: true, next })
+        : NextResponse.redirect(new URL(next, request.url));
     const supabase = createSupabaseRouteClient(request, response);
 
     console.log('[Auth Callback] Exchanging code for session...');
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error || !data.user) {
-        console.error('[Auth Callback] Error exchanging code:', error);
+        console.error('[Auth Callback] Error exchanging code:', error?.message ?? error);
+        if (wantsJson) {
+            return NextResponse.json(
+                { ok: false, message: error?.message ?? 'Failed to exchange code' },
+                { status: 400 }
+            );
+        }
         return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
     }
 

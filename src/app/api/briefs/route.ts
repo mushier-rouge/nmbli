@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { sanitizeEnvValue } from '@/lib/utils/env';
+import type { Prisma } from '@/generated/prisma';
 
 export async function POST(request: NextRequest) {
+    const start = Date.now();
     console.log('[API] /api/briefs POST Request received');
     const dbUrl = sanitizeEnvValue(process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL);
     if (dbUrl) {
@@ -18,8 +20,14 @@ export async function POST(request: NextRequest) {
         request: { headers: request.headers },
     });
 
+    console.log('[API] /api/briefs reading Supabase session...');
     const supabase = createSupabaseRouteClient(request, response);
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+        console.error('[API] /api/briefs session error', sessionError.message);
+        return NextResponse.json({ message: 'Unable to read session' }, { status: 500 });
+    }
 
     if (!session) {
         console.log('[API] /api/briefs Unauthorized: No session');
@@ -43,7 +51,7 @@ export async function POST(request: NextRequest) {
         console.log('[API] /api/briefs User record upserted.');
 
         const body = await request.json();
-        console.log('[API] /api/briefs Request body parsed.');
+        console.log('[API] /api/briefs Request body parsed.', Array.isArray(body) ? { type: 'array', length: body.length } : { keys: Object.keys(body ?? {}) });
 
         // Whitelist the fields to be inserted into the database
         const {
@@ -59,7 +67,7 @@ export async function POST(request: NextRequest) {
             paymentPreferences,
         } = body;
 
-        const briefData: any = {
+        const briefData: Prisma.BriefCreateInput = {
             buyerId: session.user.id,
             status: 'sourcing', // Default status
             zipcode,
@@ -71,23 +79,23 @@ export async function POST(request: NextRequest) {
             colors,
             mustHaves,
             timelinePreference,
+            paymentPreferences: paymentPreferences ?? undefined,
         };
-
-        if (paymentPreferences) {
-            briefData.paymentPreferences = paymentPreferences;
-        }
 
         console.log('[API] /api/briefs Creating brief in database...');
         // Create the brief
         const brief = await prisma.brief.create({
             data: briefData,
         });
-        console.log('[API] /api/briefs Brief created with ID:', brief.id);
+        console.log('[API] /api/briefs Brief created with ID:', brief.id, 'in', `${Date.now() - start}ms`);
 
         return NextResponse.json({ brief });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Internal Server Error';
         console.error('[API] /api/briefs Error creating brief:', message);
+        if (error instanceof Error && error.stack) {
+            console.error('[API] /api/briefs Error stack:', error.stack);
+        }
         return NextResponse.json({ message }, { status: 500 });
     }
 }

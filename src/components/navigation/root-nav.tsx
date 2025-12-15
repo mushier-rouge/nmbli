@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 type SessionSummary = {
   email: string;
@@ -38,7 +39,16 @@ export function RootNav({ session }: RootNavProps) {
     setIsSigningOut(true);
     try {
       console.log('[DEBUG][RootNav] sign out start', { timestamp: new Date().toISOString() });
-      await fetch('/api/auth/logout', { method: 'POST' });
+      const supabase = getSupabaseBrowserClient();
+      try {
+        await supabase.auth.signOut();
+      } catch (clientError) {
+        console.error('[DEBUG][RootNav] client signOut error', clientError);
+      }
+      const logoutResponse = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      if (!logoutResponse.ok) {
+        console.error('[DEBUG][RootNav] server logout returned non-OK', logoutResponse.status);
+      }
       // Refresh to ensure server components pick up cleared session cookies
       router.refresh();
       router.push('/login');

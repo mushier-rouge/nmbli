@@ -56,9 +56,26 @@ export default function AuthCallbackPage() {
           debugAuth('callback-client', 'Exchanging auth code via server', { authCode, next });
           const serverResponse = await fetch(`/api/auth/callback?code=${encodeURIComponent(authCode)}&next=${encodeURIComponent(next)}`, {
             method: 'GET',
+            headers: { Accept: 'application/json' },
             credentials: 'same-origin',
           });
-          if (!serverResponse.ok) {
+          let serverExchangeOk = serverResponse.ok;
+          try {
+            const body = await serverResponse.clone().json();
+            if (body?.ok === false) {
+              serverExchangeOk = false;
+              console.error('Server exchange returned failure body', body);
+              throw new Error(body?.message || 'Server exchange failed');
+            }
+            console.log('Server exchange response body', body);
+          } catch (parseError) {
+            // Ignore JSON parse errors – rely on status code
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('Server exchange JSON parse skipped', parseError);
+            }
+          }
+
+          if (!serverExchangeOk) {
             console.error('Server exchange failed, falling back to client exchange', serverResponse.status);
             const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
             if (exchangeError) {
@@ -66,8 +83,6 @@ export default function AuthCallbackPage() {
               throw new Error(exchangeError.message);
             }
             console.log('Code exchange successful, user:', data.user?.email);
-          } else {
-            console.log('Server exchange successful');
           }
 
           // Wait a moment for cookies to be set
@@ -106,10 +121,13 @@ export default function AuthCallbackPage() {
   }, [supabase, searchParamsKey, router]);
 
   if (error) {
+    const friendlyError = error.includes('code verifier')
+      ? 'The login link expired. Please start the sign-in again to get a fresh link.'
+      : error;
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <h1 className="text-2xl font-semibold">Couldn&apos;t sign you in</h1>
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">{friendlyError}</p>
         <p className="text-xs text-muted-foreground">
           Request a fresh magic link or contact support if the issue persists.
         </p>
