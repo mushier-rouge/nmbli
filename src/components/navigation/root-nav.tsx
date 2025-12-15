@@ -37,6 +37,8 @@ export function RootNav({ session }: RootNavProps) {
     startTransition(async () => {
       console.log('[DEBUG][RootNav] sign out start', { timestamp: new Date().toISOString() });
       await fetch('/api/auth/logout', { method: 'POST' });
+      // Refresh to ensure server components pick up cleared session cookies
+      router.refresh();
       router.push('/login');
     });
   }
