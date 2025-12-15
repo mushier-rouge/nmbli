@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
         // Pass invite code as metadata if present
         const options: { emailRedirectTo: string; data?: { inviteCode: string } } = {
-            emailRedirectTo: `${new URL(request.url).origin}/auth/callback`,
+            emailRedirectTo: `${new URL(request.url).origin}/auth/callback?next=/briefs`,
         };
 
         if (inviteCode) {

@@ -53,13 +53,22 @@ export default function AuthCallbackPage() {
           if (!authCode) {
             throw new Error('Magic link is missing a token. Try requesting a new link.');
           }
-          debugAuth('callback-client', 'Exchanging auth code', { authCode });
-          const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
-          if (exchangeError) {
-            console.error('exchangeCodeForSession error:', exchangeError);
-            throw new Error(exchangeError.message);
+          debugAuth('callback-client', 'Exchanging auth code via server', { authCode, next });
+          const serverResponse = await fetch(`/api/auth/callback?code=${encodeURIComponent(authCode)}&next=${encodeURIComponent(next)}`, {
+            method: 'GET',
+            credentials: 'same-origin',
+          });
+          if (!serverResponse.ok) {
+            console.error('Server exchange failed, falling back to client exchange', serverResponse.status);
+            const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
+            if (exchangeError) {
+              console.error('exchangeCodeForSession error:', exchangeError);
+              throw new Error(exchangeError.message);
+            }
+            console.log('Code exchange successful, user:', data.user?.email);
+          } else {
+            console.log('Server exchange successful');
           }
-          console.log('Code exchange successful, user:', data.user?.email);
 
           // Wait a moment for cookies to be set
           await new Promise(resolve => setTimeout(resolve, 100));
