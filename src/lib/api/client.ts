@@ -16,12 +16,15 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export async function apiCreateBrief(payload: CreateBriefInput) {
+  console.log('[ClientAPI] apiCreateBrief validating payload...');
   createBriefSchema.parse(payload);
+  console.log('[ClientAPI] apiCreateBrief sending POST /api/briefs...');
   const response = await fetch('/api/briefs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  console.log(`[ClientAPI] apiCreateBrief received response: ${response.status} ${response.statusText}`);
   return handleResponse<{ brief: unknown }>(response);
 }
 

@@ -52,9 +52,9 @@ const paymentCopy: Record<PaymentType, { title: string; description: string }> =
 const splitList = (value: string | undefined) =>
   value
     ? value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
     : [];
 
 export function BriefForm() {
@@ -105,7 +105,7 @@ export function BriefForm() {
     setIsSubmitting(true);
     setPaymentError(null);
 
-    const enabledPreferences = (Object.entries(paymentOptions) as [PaymentType, PaymentOptionState][]) 
+    const enabledPreferences = (Object.entries(paymentOptions) as [PaymentType, PaymentOptionState][])
       .filter(([, option]) => option.enabled);
 
     if (enabledPreferences.length === 0) {
@@ -160,6 +160,7 @@ export function BriefForm() {
     }
 
     try {
+      console.log('BriefForm: submitting values...', values);
       const payload: CreateBriefInput = {
         zipcode: values.zipcode.trim(),
         paymentPreferences: preferences,
@@ -173,7 +174,9 @@ export function BriefForm() {
         timelinePreference: values.timelinePreference.trim(),
       };
 
+      console.log('BriefForm: calling apiCreateBrief...');
       const { brief } = await apiCreateBrief(payload);
+      console.log('BriefForm: apiCreateBrief success', brief);
       const briefId = (brief as { id: string }).id;
 
       // Trigger automation in background (fire-and-forget from frontend perspective)
