@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireEnv } from '@/lib/utils/env';
 
 const warnOnce = (() => {
   const warned = new Set<string>();
@@ -23,13 +24,13 @@ export async function getSupabaseServerClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
 
   const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL');
   const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase env vars for server client');
-  }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   console.log('[DEBUG][getSupabaseServerClient] env present', {
     hasSupabaseUrl: Boolean(supabaseUrl),

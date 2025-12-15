@@ -29,7 +29,7 @@ export function LoginForm(props: LoginFormProps) {
         const { error } = await supabase.auth.signInWithOtp({
             email: email.toLowerCase(),
             options: {
-                emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
         });
 
@@ -89,7 +89,7 @@ export function LoginForm(props: LoginFormProps) {
                 await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: `${window.location.origin}/api/auth/callback`,
+                        redirectTo: `${window.location.origin}/auth/callback`,
                     }
                 });
             }}>

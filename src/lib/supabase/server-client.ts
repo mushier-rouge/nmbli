@@ -1,4 +1,5 @@
 import { createServerClient as createSupabaseServerClient, type CookieOptions } from '@supabase/ssr';
+import { requireEnv } from '@/lib/utils/env';
 
 type CookieStore = {
   get: (name: string) => { value?: string } | undefined;
@@ -30,12 +31,8 @@ function removeCookie(cookieStore: CookieStore, name: string, options: CookieOpt
 
 export function createServerClient(cookieStoreInput: unknown) {
   const cookieStore = cookieStoreInput as CookieStore;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase env vars for server client');
-  }
+  const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
