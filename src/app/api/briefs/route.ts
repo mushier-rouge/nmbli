@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         } = body;
 
         const briefData: Prisma.BriefCreateInput = {
-            buyerId: session.user.id,
+            buyer: { connect: { id: session.user.id } },
             status: 'sourcing', // Default status
             zipcode,
             paymentType,
