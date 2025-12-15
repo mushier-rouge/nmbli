@@ -40,13 +40,37 @@ if (!prismaEnumRegistry.TimelineActor) {
   prismaEnumRegistry.TimelineActor = TimelineActor;
 }
 
-const appendSslMode = (url: string) => {
-  if (url.includes('sslmode=')) {
+const appendParams = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    const params = parsed.searchParams;
+
+    if (!params.has('sslmode')) {
+      params.set('sslmode', 'require');
+    }
+    if (!params.has('connect_timeout')) {
+      params.set('connect_timeout', '5');
+    }
+    if (!params.has('pool_timeout')) {
+      params.set('pool_timeout', '5');
+    }
+    if (!params.has('pgbouncer')) {
+      params.set('pgbouncer', 'true');
+    }
+    if (!params.has('connection_limit')) {
+      params.set('connection_limit', '1');
+    }
+
+    parsed.search = params.toString();
+    return parsed.toString();
+  } catch {
+    // Fallback to appending sslmode only
+    if (!url.includes('sslmode=')) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}sslmode=require`;
+    }
     return url;
   }
-
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}sslmode=require`;
 };
 
 const getDatabaseUrl = () => {
@@ -62,7 +86,7 @@ const getDatabaseUrl = () => {
     console.warn('[Prisma] Sanitized database URL (removed whitespace/escaped newlines)');
   }
 
-  return appendSslMode(sanitized);
+  return appendParams(sanitized);
 };
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };

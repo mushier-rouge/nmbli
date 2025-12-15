@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
+import { sanitizeEnvValue } from '@/lib/utils/env';
 
 export async function POST(request: NextRequest) {
     console.log('[API] /api/briefs POST Request received');
+    const dbUrl = sanitizeEnvValue(process.env.DATABASE_POOL_URL ?? process.env.DATABASE_URL);
+    if (dbUrl) {
+        try {
+            const host = new URL(dbUrl).host;
+            console.log('[API] /api/briefs DB host', host);
+        } catch {
+            console.warn('[API] /api/briefs DB host parse failed');
+        }
+    }
     const response = NextResponse.next({
         request: { headers: request.headers },
     });
@@ -76,8 +86,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ brief });
     } catch (error) {
-        console.error('[API] /api/briefs Error creating brief:', error);
-        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Internal Server Error';
+        console.error('[API] /api/briefs Error creating brief:', message);
+        return NextResponse.json({ message }, { status: 500 });
     }
 }
 
