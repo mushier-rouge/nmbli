@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const useDevServer = !process.env.PLAYWRIGHT_NO_SERVER;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false, // Run tests sequentially to avoid conflicts
@@ -20,10 +22,12 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: useDevServer
+    ? {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+      }
+    : undefined,
 });

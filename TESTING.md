@@ -40,6 +40,26 @@ npm run test:unit
 npm run test
 ```
 
+### 2b. Run Smoke Tests (Auth + Brief CRUD)
+
+Use this before deploying or against prod/preview to ensure login/logout and brief creation work end-to-end via the public APIs.
+
+```bash
+# Target prod by default; override PLAYWRIGHT_BASE_URL for previews
+SMOKE_SUPABASE_SERVICE_ROLE_KEY=... \
+SMOKE_TEST_EMAIL=smoke-buyer@nmbli.com \
+SMOKE_TEST_PASSWORD=SmokeBuyer123! \
+PLAYWRIGHT_NO_SERVER=1 \
+PLAYWRIGHT_BASE_URL=https://nmbli.com \
+npm run test:smoke
+```
+
+What it does:
+- Ensures the smoke user exists in Supabase (service role).
+- Logs in via `/api/auth/password-login` (sets cookies).
+- POSTs `/api/briefs`, GETs `/api/briefs`, DELETEs the created brief.
+- Leaves the environment clean.
+
 **Coverage:** 65 tests covering:
 - Email template generation
 - Dealer discovery logic
