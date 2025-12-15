@@ -1,6 +1,6 @@
 # Nmbli Architecture Documentation
 
-**Last Updated:** October 21, 2025
+**Last Updated:** December 16, 2025
 
 ## Overview
 
@@ -9,7 +9,7 @@ Nmbli is a platform that connects car buyers with dealerships to get transparent
 ## Technology Stack
 
 ### Frontend
-- **Framework:** Next.js 15.5.4 (App Router)
+- **Framework:** Next.js 16.0.x (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **UI Components:** Custom component library based on Radix UI
@@ -18,14 +18,14 @@ Nmbli is a platform that connects car buyers with dealerships to get transparent
 
 ### Backend
 - **Runtime:** Node.js (Next.js serverless functions)
-- **Database:** PostgreSQL (via Supabase)
+- **Database:** PostgreSQL (Supabase)
 - **ORM:** Prisma
-- **Authentication:** Supabase Auth (magic link email)
-- **API:** Next.js API routes + Server Actions
+- **Authentication:** Supabase Auth (magic link, Google OAuth, password for ops/automation)
+- **API:** Next.js API routes
 
 ### Infrastructure
 - **Hosting:** Vercel (production + previews)
-- **Database:** Supabase (PostgreSQL + Auth)
+- **Database & Auth:** Supabase (PostgreSQL + Auth) via Supavisor pooler
 - **Version Control:** Git + GitHub
 - **CI/CD:** GitHub → Vercel automatic deployments
 
@@ -117,57 +117,45 @@ Nmbli is a platform that connects car buyers with dealerships to get transparent
 
 ### Current Database Issues Resolved
 1. **IPv6 vs IPv4**: Vercel doesn't support IPv6, switched to Supavisor pooler
-2. **Connection Pooling**: Using pgbouncer via Supavisor on port 6543
+2. **Connection Pooling**: Using Supavisor (pgbouncer) on port 6543 with `pgbouncer=true`, `connection_limit=1`, `connect_timeout=5`, `pool_timeout=5`
 3. **SSL**: Always enforced with `sslmode=require`
 
 ## Current Features
 
-### ✅ Implemented
+### ✅ Implemented (Dec 2025)
 
 1. **Authentication**
-   - Magic link email authentication
-   - Role-based access (buyer/dealer/ops)
-   - Session management via Supabase
+   - Magic link email (server-side code exchange to avoid PKCE verifier errors)
+   - Google OAuth
+   - Password login for ops/automation
+   - Role-based access (buyer/dealer/ops) with Supabase session cookies
 
 2. **Brief Creation** (Buyer Flow)
-   - Multi-step form with validation
-   - Vehicle selection (Make → Model → Trim cascading dropdowns)
-   - Payment preferences (cash/finance/lease)
-   - Budget constraints (max OTD, down payment, monthly payment)
-   - Location (zipcode)
+   - Form validation (React Hook Form + Zod)
+   - Vehicle selection (make/model/trim cascade)
+   - Payment preferences (cash/finance/lease) and budgets
+   - Zipcode, colors, must-haves, timeline
 
 3. **Brief Management**
-   - List all briefs for a buyer
-   - View brief details
-   - Track brief status
+   - Buyer brief list/detail with timeline events and quotes
+   - Ops brief detail with dealer invites and quote publish controls
 
 4. **Vehicle Data**
-   - 44 makes, 360+ models with trims
-   - Data sourced from Google
-   - Cascading dropdown UI
-   - Client-side filtering
+   - Static make/model/trim dataset with client-side filtering
 
 5. **Testing Infrastructure**
-   - Unit tests for services and utilities
-   - Pre-commit hooks enforce test passage
-   - 21 tests covering critical paths
+   - Vitest unit suite (services, utilities, API)
+   - Playwright scaffold (mostly skipped)
+   - Husky hooks present (can be bypassed via `HUSKY=0` when necessary)
 
 6. **Type Safety**
-   - Full TypeScript coverage
-   - Zod validation for forms and API
-   - Prisma type generation
+   - Zod schemas shared across client/server
+   - Prisma types generated into `src/generated/prisma`
 
 ## Recent Technical Fixes
 
-### Vehicle Selector Bundle Issue (Oct 21, 2025)
-**Problem:** Vehicle data (47KB JSON) wasn't being bundled into client JavaScript
-**Solution:** Convert JSON to TypeScript constant file
-**Result:** Data now properly bundled and accessible in browser
-
-### Database Connection Issue (Oct 21, 2025)
-**Problem:** Can't reach database server (IPv6 incompatibility)
-**Solution:** Switch from direct connection to Supavisor pooler
-**Connection String:** `postgresql://postgres.{ref}:[PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
+- **DB connectivity (Dec 2025):** Standardized Supabase pooler URLs with `pgbouncer=true`, `connection_limit=1`, `sslmode=require`, `connect_timeout=5`, `pool_timeout=5` to avoid hangs.
+- **Auth callback (Dec 2025):** `/api/auth/callback` now performs server-side code exchange; client callback falls back to client exchange only if server exchange fails, preventing “code verifier” errors from Supabase.
 
 ## File Structure
 
@@ -225,20 +213,15 @@ Both `.env.local` (development) and Vercel production environment must have thes
 
 ## Known Limitations
 
-1. **Dealer Side Not Implemented**
-   - No dealer quote submission UI
-   - No dealer notification system
-   - No dealer dashboard
+1. **Automation/Integrations**
+   - Background automation depends on external keys (Skyvern, Google Maps) which may be absent in some environments.
+   - Playwright E2E suite is scaffolded but largely skipped.
 
-2. **Manual Dealer Outreach**
-   - Currently no automated dealer discovery
-   - No automated quote collection
-   - No email/SMS integration
+2. **Branding for OAuth**
+   - Google consent screen shows the Supabase auth domain unless a custom auth domain is configured.
 
-3. **Quote Comparison**
-   - Basic viewing only
-   - No side-by-side comparison UI
-   - No contract review features
+3. **Ops workflows**
+   - Contract guardrail checks exist, but manual review is still expected when automation is disabled.
 
 ## Security
 
