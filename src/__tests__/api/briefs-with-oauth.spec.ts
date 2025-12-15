@@ -92,7 +92,7 @@ describe('POST /api/briefs - OAuth User Creation & Brief Creation', () => {
 
     // Call the API
     const response = await POST(request as any);
-    const data = await response.json();
+    const { brief } = await response.json();
 
     // Verify user was created with correct data
     expect(prisma.user.upsert).toHaveBeenCalledWith({
@@ -117,10 +117,10 @@ describe('POST /api/briefs - OAuth User Creation & Brief Creation', () => {
 
     // Verify response
     expect(response.status).toBe(200);
-    expect(data.id).toBe('brief-123');
-    expect(data.buyerId).toBe(mockUserId);
-    expect(data.status).toBe('sourcing');
-    expect(data.zipcode).toBe('98101');
+    expect(brief?.id).toBe('brief-123');
+    expect(brief?.buyerId).toBe(mockUserId);
+    expect(brief?.status).toBe('sourcing');
+    expect(brief?.zipcode).toBe('98101');
   });
 
   it('should use existing User record and create brief', async () => {
@@ -155,7 +155,7 @@ describe('POST /api/briefs - OAuth User Creation & Brief Creation', () => {
 
     // Call the API
     const response = await POST(request as any);
-    const data = await response.json();
+    const { brief } = await response.json();
 
     // Verify user upsert was called (would use existing record)
     expect(prisma.user.upsert).toHaveBeenCalled();
@@ -165,7 +165,7 @@ describe('POST /api/briefs - OAuth User Creation & Brief Creation', () => {
 
     // Verify response
     expect(response.status).toBe(200);
-    expect(data.id).toBe('brief-123');
+    expect(brief?.id).toBe('brief-123');
   });
 
   it('should derive name from email when user_metadata.full_name is missing', async () => {

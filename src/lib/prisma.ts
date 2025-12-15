@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '../generated/prisma';
+import { sanitizeEnvValue } from '@/lib/utils/env';
 
 export const TimelineEventType = {
   brief_created: 'brief_created',
@@ -55,7 +56,13 @@ const getDatabaseUrl = () => {
     throw new Error('Missing DATABASE_POOL_URL or DATABASE_URL environment variable for Prisma client');
   }
 
-  return appendSslMode(rawUrl);
+  const sanitized = sanitizeEnvValue(rawUrl);
+
+  if (rawUrl !== sanitized) {
+    console.warn('[Prisma] Sanitized database URL (removed whitespace/escaped newlines)');
+  }
+
+  return appendSslMode(sanitized);
 };
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };

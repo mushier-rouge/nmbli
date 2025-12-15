@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         });
         console.log('[API] /api/briefs Brief created with ID:', brief.id);
 
-        return NextResponse.json(brief);
+        return NextResponse.json({ brief });
     } catch (error) {
         console.error('[API] /api/briefs Error creating brief:', error);
         return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
