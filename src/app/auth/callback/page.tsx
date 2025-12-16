@@ -34,6 +34,11 @@ export default function AuthCallbackPage() {
 
     async function completeAuth() {
       try {
+        // DEBUG: Log all cookies to see if PKCE verifier exists
+        console.log('[AUTH_CALLBACK] All cookies:', document.cookie);
+        console.log('[AUTH_CALLBACK] URL search params:', search.toString());
+        console.log('[AUTH_CALLBACK] URL hash params:', hashParams.toString());
+
         if (accessToken && refreshToken) {
           debugAuth('callback-client', 'Setting session via access token');
           const { error: setSessionError, data } = await supabase.auth.setSession({

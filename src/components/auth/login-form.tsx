@@ -85,13 +85,16 @@ export function LoginForm(props: LoginFormProps) {
                 </div>
             </div>
             <Button variant="outline" type="button" disabled={isLoading} onClick={async () => {
+                console.log('[OAUTH_INIT] Cookies before OAuth:', document.cookie);
                 const supabase = getSupabaseBrowserClient();
-                await supabase.auth.signInWithOAuth({
+                const { data, error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
                         redirectTo: `${window.location.origin}/auth/callback?next=/briefs`,
                     }
                 });
+                console.log('[OAUTH_INIT] OAuth response:', { data, error });
+                console.log('[OAUTH_INIT] Cookies after OAuth:', document.cookie);
             }}>
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path
