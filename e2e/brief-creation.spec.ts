@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
+const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
+test.skip(!RUN_FULL_E2E, 'Requires full interactive auth + UI flow; run with RUN_FULL_E2E=1');
+
 test.describe('Brief Creation', () => {
   test.beforeAll(() => {
     // Run the database seeder before all tests in this file

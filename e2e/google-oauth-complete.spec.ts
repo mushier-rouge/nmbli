@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
+test.skip(!RUN_FULL_E2E, 'Hits production URLs; run with RUN_FULL_E2E=1');
+
 test.describe('Google OAuth Complete Flow', () => {
   test('should complete OAuth and load /briefs page without database errors', async ({ page }) => {
     // Navigate to login page

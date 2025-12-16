@@ -5,6 +5,9 @@ import { test, expect } from '@playwright/test';
  * Tests that emails are actually sent to the test email address
  */
 
+const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
+test.skip(!RUN_FULL_E2E, 'Requires external email delivery + seeded test users; run with RUN_FULL_E2E=1');
+
 test.describe('Email Sending Integration Test', () => {
 
   test('should successfully send quote request emails to dealers', async ({ request, page }) => {

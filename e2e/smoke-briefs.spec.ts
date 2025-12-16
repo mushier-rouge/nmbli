@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SMOKE_SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_ROLE_KEY = process.env.SMOKE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TEST_EMAIL = process.env.SMOKE_TEST_EMAIL || 'smoke-buyer@nmbli.com';
 const TEST_PASSWORD = process.env.SMOKE_TEST_PASSWORD || 'SmokeBuyer123!';
 
@@ -11,7 +11,7 @@ const TEST_PASSWORD = process.env.SMOKE_TEST_PASSWORD || 'SmokeBuyer123!';
  */
 async function ensureSmokeUser() {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SMOKE_SUPABASE_SERVICE_ROLE_KEY for smoke tests');
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for smoke tests');
   }
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -49,23 +49,10 @@ test.describe('Smoke: auth + brief CRUD', () => {
     await ensureSmokeUser();
 
     // 1) Sign in via password-login API to set cookies in this browser context
-    const loginResponse = await page.evaluate(async (email, password) => {
-      const res = await fetch('/api/auth/password-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-      let body: unknown = null;
-      try {
-        body = await res.json();
-      } catch {
-        // ignore
-      }
-      return { status: res.status, body };
-    }, TEST_EMAIL, TEST_PASSWORD);
-
-    expect(loginResponse.status).toBe(200);
+    const loginResponse = await page.request.post('/api/auth/password-login', {
+      data: { email: TEST_EMAIL, password: TEST_PASSWORD },
+    });
+    expect(loginResponse.status()).toBe(200);
 
     // 2) Create a brief through the API using the authenticated cookies
     const payload = {
@@ -80,39 +67,25 @@ test.describe('Smoke: auth + brief CRUD', () => {
       timelinePreference: 'ASAP',
     };
 
-    const createResult = await page.evaluate(async (body) => {
-      const res = await fetch('/api/briefs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-      });
-      const json = await res.json().catch(() => ({}));
-      return { status: res.status, body: json };
-    }, payload);
-
-    expect(createResult.status).toBe(200);
-    expect(createResult.body?.brief?.id).toBeTruthy();
-    const briefId = createResult.body.brief.id as string;
+    const createResponse = await page.request.post('/api/briefs', {
+      data: payload,
+    });
+    expect(createResponse.status()).toBe(200);
+    const createBody = await createResponse.json().catch(() => ({}));
+    expect(createBody?.brief?.id).toBeTruthy();
+    const briefId = createBody.brief.id as string;
 
     // 3) Fetch briefs for the user to ensure listing works
-    const listResult = await page.evaluate(async () => {
-      const res = await fetch('/api/briefs', { credentials: 'include' });
-      const json = await res.json().catch(() => ({}));
-      return { status: res.status, body: json };
-    });
-    expect(listResult.status).toBe(200);
-    expect(Array.isArray(listResult.body)).toBe(true);
-    expect(listResult.body.find((b: { id: string }) => b.id === briefId)).toBeTruthy();
+    const listResponse = await page.request.get('/api/briefs');
+    expect(listResponse.status()).toBe(200);
+    const listBody = await listResponse.json().catch(() => ({}));
+    expect(Array.isArray(listBody)).toBe(true);
+    expect(listBody.find((b: { id: string }) => b.id === briefId)).toBeTruthy();
 
     // 4) Delete the created brief to leave the environment clean
-    const deleteResult = await page.evaluate(async (id) => {
-      const res = await fetch(`/api/briefs/${id}`, { method: 'DELETE', credentials: 'include' });
-      const json = await res.json().catch(() => ({}));
-      return { status: res.status, body: json };
-    }, briefId);
-
-    expect(deleteResult.status).toBe(200);
-    expect(deleteResult.body?.success).toBe(true);
+    const deleteResponse = await page.request.delete(`/api/briefs/${briefId}`);
+    expect(deleteResponse.status()).toBe(200);
+    const deleteBody = await deleteResponse.json().catch(() => ({}));
+    expect(deleteBody?.success).toBe(true);
   });
 });
