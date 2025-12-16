@@ -19,9 +19,17 @@ export function getSupabaseBrowserClient() {
     throw new Error('Missing Supabase env vars for browser client');
   }
 
-  client = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  client = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'sb-auth-token',
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[DEBUG][getSupabaseBrowserClient] created new client', { timestamp: new Date().toISOString() });
+    console.log('[DEBUG][getSupabaseBrowserClient] created new client with localStorage', { timestamp: new Date().toISOString() });
   }
   return client;
 }
