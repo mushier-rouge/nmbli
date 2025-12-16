@@ -110,6 +110,15 @@ export async function POST(request: NextRequest) {
         );
         console.log('[API] /api/briefs Brief created with ID:', brief.id, 'in', `${Date.now() - start}ms`);
 
+        // Trigger dealer discovery in background (non-blocking)
+        fetch(`${request.nextUrl.origin}/api/briefs/${brief.id}/automate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        }).catch(err => {
+            console.error('[API] /api/briefs Failed to trigger automation:', err);
+        });
+        console.log('[API] /api/briefs Triggered background dealer discovery for brief', brief.id);
+
         return NextResponse.json({ brief });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Internal Server Error';
