@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
         const briefData = {
             buyerId: session.user.id,
-            status: 'sourcing', // Default status
+            status: 'sourcing' as const, // Default status
             zipcode,
             paymentType,
             maxOTD,
