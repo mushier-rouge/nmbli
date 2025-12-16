@@ -1,158 +1,217 @@
 import { prisma } from '../prisma';
-import { skyvern } from '../automation/skyvern';
-import { Dealership } from '@prisma/client';
+import { discoverDealersForBrief, getDealersForBrief } from './dealer-discovery';
+import { gmailClient } from '../email/gmail';
+import { twilioClient } from '../sms/twilio';
+import { recordTimelineEvent } from './timeline';
 
 export const briefAutomation = {
     /**
-     * Process a brief by finding dealerships and triggering Skyvern workflows
+     * Process a brief by discovering dealers and contacting them
      */
     async processBrief(briefId: string) {
         console.log(`🤖 Processing brief ${briefId}...`);
 
-        // 1. Get the brief and associated dealerships
-        const brief = await prisma.brief.findUnique({
-            where: { id: briefId },
-            include: {
-                dealerProspects: {
-                    include: {
-                        dealer: true
-                    }
+        try {
+            // Get the brief
+            const brief = await prisma.brief.findUnique({
+                where: { id: briefId },
+                include: {
+                    buyer: true,
                 },
-                // We'll use the SkyvernRun relation to avoid duplicate runs
-                skyvernRuns: true,
-            },
-        });
+            });
 
-        if (!brief) {
-            throw new Error(`Brief ${briefId} not found`);
-        }
+            if (!brief) {
+                throw new Error(`Brief ${briefId} not found`);
+            }
 
-        // In a real implementation, we would likely look up "Dealerships" (the automation model)
-        // rather than "DealerProspects" (the manual model), or map between them.
-        // For this implementation, I'll fetch Dealerships that are linked to this brief via some logic
-        // or just fetch all dealerships that match the brief criteria if not explicitly linked.
+            // Record automation start
+            await recordTimelineEvent({
+                briefId,
+                type: 'automation_started',
+                actor: 'system',
+                payload: {
+                    makes: brief.makes,
+                    models: brief.models,
+                },
+            });
 
-        // However, looking at the schema and roadmap, it seems `Dealership` is the automation-centric model.
-        // Let's assume we want to find Dealerships that match the brief's make/state.
+            // Discover dealers for this brief
+            await discoverDealersForBrief(briefId);
 
-        // For this specific request, the user's test script implies discoverDealersForBrief populates something.
-        // Let's check `brief.zipcode` or similar.
+            // Get discovered dealers
+            const dealers = await getDealersForBrief(briefId);
 
-        // To match the `test-automation.ts` expectation:
-        // "Step 3: Test full dealer discovery (saves to DB)..."
-        // "Step 5: Test full automation..."
+            // Contact each dealer
+            for (const dealer of dealers) {
+                await this.contactDealer(brief, dealer);
+            }
 
-        // We'll fetch Dealerships that have been associated with this brief.
-        // The schema has `SkyvernRun` pointing to `Dealership`.
+            // Update brief status to 'offers' after contacting dealers
+            await prisma.brief.update({
+                where: { id: briefId },
+                data: { status: 'offers' },
+            });
 
-        // Let's assume there's a way to get relevant dealerships. 
-        // Since `Dealership` doesn't have a direct `briefs` relation (it has a many-to-many implicit or explicit?).
-        // Wait, `Dealership` model:
-        // model Dealership { ... }
+            await recordTimelineEvent({
+                briefId,
+                type: 'automation_completed',
+                actor: 'system',
+                payload: {
+                    dealersContacted: dealers.length,
+                },
+            });
 
-        // `SkyvernRun` has `briefId` and `dealershipId`.
+        } catch (error) {
+            console.error(`❌ Error processing brief ${briefId}:`, error);
 
-        // Ideally we'd iterate over `Dealerships` that were "discovered" for this brief.
-        // But `Dealership` has no relation to `Brief` except via `SkyvernRun`, `EmailMessage`, etc.
-        // Ah, wait. `test-automation.ts` says:
-        /*
-          const dealerships = await prisma.dealership.findMany({
-            where: {
-              briefDealerships: { // This relation DOES NOT EXIST in the schema I read!
-                some: { briefId: testBrief.id },
-              },
-            },
-          });
-        */
-        // The schema I read has NO `briefDealerships` on `Dealership`.
-        // It seems the `SkyvernRun` table serves as the link? Or there's a missing join table in the schema vs the test script's expectation.
-        // Or the test script refers to a relation that WAS in a previous version or is assumed.
+            await recordTimelineEvent({
+                briefId,
+                type: 'automation_error',
+                actor: 'system',
+                payload: {
+                    error: error instanceof Error ? error.message : String(error),
+                },
+            });
 
-        // Actually, let's look at `DealerProspect`. That links `Brief` and `Dealer` (not `Dealership`).
-        // The roadmap says "Phase 1... New table: dealerships".
-
-        // If the test script is using `briefDealerships`, and it fails, that's a problem.
-        // But `test-automation.ts` failed on import, not execution.
-
-        // Let's fallback to a simpler logic:
-        // We will just define the method to accept a list of dealerships or find them somehow.
-        // Given the schema ambiguity, I will implement a safe version that triggers for a specific dealership if passed,
-        // or just logs for now if it can't find them.
-
-        // For now, I'll update the test script to pass dependencies or fix the query if needed.
-        // But sticking to the task: "add retry logic on skyvern".
-
-        // I will implement `processBrief` to find `Dealership`s that *maybe* match the brief make/state?
-        // Or I'll fix the schema in a separate task.
-        // Let's assuming for now we just want the automation logic.
-
-        // I'll assume we pass a dealership ID to a `runAutomation` method, and `processBrief`
-        // coordinates it.
-
-        const dealerships = await prisma.dealership.findMany({
-            where: {
-                make: { in: brief.makes },
-                // simplistic matching
-            },
-            take: 5
-        });
-
-        for (const dealer of dealerships) {
-            await this.runAutomation(brief, dealer);
+            throw error;
         }
     },
 
-    async runAutomation(brief: { id: string; makes: string[]; models: string[] }, dealership: Dealership) {
-        if (!dealership.website) {
-            console.log(`Skipping ${dealership.name} - no website`);
-            return;
+    async contactDealer(brief: any, dealer: any) {
+        // Check for known contact with email
+        const contact = await prisma.dealerContact.findFirst({
+            where: {
+                dealershipId: dealer.id,
+                email: { not: null },
+            },
+            orderBy: { lastContactedAt: 'desc' },
+        });
+
+        // Determine contact method and execute
+        if (contact?.email) {
+            // Use known contact email
+            await this.sendEmail(brief, dealer, contact.email, contact.id);
+        } else if (dealer.email) {
+            // Use dealership email
+            await this.sendEmail(brief, dealer, dealer.email, null);
+        } else if (dealer.phone) {
+            // Fallback to SMS
+            await this.sendSMS(brief, dealer);
+        } else {
+            // Last resort: queue Skyvern
+            await this.queueSkyvern(brief, dealer);
         }
 
-        console.log(`Running Skyvern for ${dealership.name} (${dealership.website})...`);
+        // Update dealer's last contacted timestamp
+        await prisma.dealership.update({
+            where: { id: dealer.id },
+            data: { lastContactedAt: new Date() },
+        });
+    },
 
-        try {
-            // Create the run record first
-            const run = await prisma.skyvernRun.create({
-                data: {
-                    briefId: brief.id,
-                    dealershipId: dealership.id,
-                    status: 'pending',
-                    startedAt: new Date(),
-                }
-            });
+    async sendEmail(brief: any, dealer: any, toEmail: string, contactId: string | null) {
+        const subject = `Quote Request: ${brief.makes.join(', ')} ${brief.models?.join(', ') || ''}`;
+        const body = this.buildEmailBody(brief, dealer);
 
-            // Call Skyvern with our new reliable client
-            const response = await skyvern.createWorkflow({
-                url: dealership.website,
-                navigation_goal: `Find the "Contact Us" or "Get a Quote" page for a ${brief.makes[0]} ${brief.models[0]}`,
-                data_extraction_goal: "Extract the sales phone number and email address if available",
-            });
+        const gmailMessageId = await gmailClient.sendEmail({
+            to: toEmail,
+            subject,
+            body,
+        });
 
-            // Update the run record
-            await prisma.skyvernRun.update({
-                where: { id: run.id },
-                data: {
-                    status: 'running', // workflow created successfully
-                    result: { skyvern_run_id: response.run_id }
-                }
-            });
+        await prisma.emailMessage.create({
+            data: {
+                briefId: brief.id,
+                dealershipId: dealer.id,
+                contactId,
+                direction: 'outbound',
+                toEmail,
+                subject,
+                bodyText: body,
+                gmailMessageId,
+            },
+        });
 
-            console.log(`✅ Started Skyvern run ${response.run_id} for ${dealership.name}`);
+        await recordTimelineEvent({
+            briefId: brief.id,
+            type: 'dealer_contacted',
+            actor: 'system',
+            payload: {
+                dealer: dealer.name,
+                method: 'email',
+                toEmail,
+            },
+        });
+    },
 
-        } catch (error) {
-            console.error(`❌ Failed to start automation for ${dealership.name}:`, error);
+    async sendSMS(brief: any, dealer: any) {
+        const body = `Hi! Looking for a ${brief.makes.join(', ')} ${brief.models?.join(', ') || ''}. Max budget: $${brief.maxOTD.toNumber()}. Timeline: ${brief.timelinePreference}. Can you help?`;
 
-            // Log the failure in DB
-            await prisma.skyvernRun.create({
-                data: {
-                    briefId: brief.id,
-                    dealershipId: dealership.id,
-                    status: 'failed',
-                    errorMessage: error instanceof Error ? error.message : String(error),
-                    startedAt: new Date(),
-                    completedAt: new Date(),
-                }
-            });
-        }
+        const twilioSid = await twilioClient.sendSMS({
+            to: dealer.phone,
+            body,
+        });
+
+        await prisma.smsMessage.create({
+            data: {
+                briefId: brief.id,
+                dealershipId: dealer.id,
+                direction: 'outbound',
+                toNumber: dealer.phone,
+                bodyText: body,
+                twilioSid,
+            },
+        });
+
+        await recordTimelineEvent({
+            briefId: brief.id,
+            type: 'dealer_contacted',
+            actor: 'system',
+            payload: {
+                dealer: dealer.name,
+                method: 'sms',
+                toNumber: dealer.phone,
+            },
+        });
+    },
+
+    async queueSkyvern(brief: any, dealer: any) {
+        const workflowId = `quote-request-${dealer.make?.toLowerCase() || 'generic'}`;
+
+        await prisma.skyvernRun.create({
+            data: {
+                briefId: brief.id,
+                dealershipId: dealer.id,
+                status: 'pending',
+                workflowId,
+            },
+        });
+
+        await recordTimelineEvent({
+            briefId: brief.id,
+            type: 'dealer_contacted',
+            actor: 'system',
+            payload: {
+                dealer: dealer.name,
+                method: 'skyvern',
+                workflowId,
+            },
+        });
+    },
+
+    buildEmailBody(brief: any, dealer: any): string {
+        return `Hello,
+
+I'm interested in purchasing a ${brief.makes.join(' or ')} ${brief.models?.join(' or ') || ''}.
+
+Details:
+- Budget: $${brief.maxOTD.toNumber()} max out-the-door
+- Payment: ${brief.paymentType}
+- Timeline: ${brief.timelinePreference}
+
+Please let me know what you have available.
+
+Thanks,
+${brief.buyer.email}`;
     }
 };

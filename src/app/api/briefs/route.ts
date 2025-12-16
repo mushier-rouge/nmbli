@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSupabaseRouteClient } from '@/lib/supabase/route';
 import { sanitizeEnvValue } from '@/lib/utils/env';
-import type { Prisma } from '@/generated/prisma';
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
     let timer: NodeJS.Timeout;
@@ -84,8 +83,8 @@ export async function POST(request: NextRequest) {
             paymentPreferences,
         } = body;
 
-        const briefData: Prisma.BriefCreateInput = {
-            buyer: { connect: { id: session.user.id } },
+        const briefData = {
+            buyerId: session.user.id,
             status: 'sourcing', // Default status
             zipcode,
             paymentType,
@@ -111,22 +110,26 @@ export async function POST(request: NextRequest) {
         console.log('[API] /api/briefs Brief created with ID:', brief.id, 'in', `${Date.now() - start}ms`);
 
         // Trigger dealer discovery in background (non-blocking)
-        fetch(`${request.nextUrl.origin}/api/briefs/${brief.id}/automate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        }).catch(err => {
-            console.error('[API] /api/briefs Failed to trigger automation:', err);
-        });
-        console.log('[API] /api/briefs Triggered background dealer discovery for brief', brief.id);
+        try {
+            const origin = request.nextUrl?.origin || new URL(request.url).origin;
+            fetch(`${origin}/api/briefs/${brief.id}/automate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            }).catch(err => {
+                console.error('[API] /api/briefs Failed to trigger automation:', err);
+            });
+            console.log('[API] /api/briefs Triggered background dealer discovery for brief', brief.id);
+        } catch (err) {
+            console.error('[API] /api/briefs Could not trigger automation:', err);
+        }
 
         return NextResponse.json({ brief });
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Internal Server Error';
-        console.error('[API] /api/briefs Error creating brief:', message);
+        console.error('[API] /api/briefs Error creating brief:', error instanceof Error ? error.message : String(error));
         if (error instanceof Error && error.stack) {
             console.error('[API] /api/briefs Error stack:', error.stack);
         }
-        return NextResponse.json({ message }, { status: 500 });
+        return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
 }
 
