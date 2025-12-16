@@ -4,7 +4,17 @@ import { requireEnv } from '@/lib/utils/env'
 
 let loggedSupabaseEnv = false
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    let timer: NodeJS.Timeout
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    })
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 export async function updateSession(request: NextRequest) {
+    const started = Date.now()
+    console.log('[SupabaseMiddleware] start', { path: request.nextUrl.pathname, timestamp: new Date().toISOString() })
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -43,7 +53,15 @@ export async function updateSession(request: NextRequest) {
         },
     })
 
-    await supabase.auth.getUser()
+    try {
+        await withTimeout(supabase.auth.getUser(), 8000, 'supabase.auth.getUser (middleware)')
+        console.log('[SupabaseMiddleware] completed', { path: request.nextUrl.pathname, ms: Date.now() - started })
+    } catch (error) {
+        console.error('[SupabaseMiddleware] auth.getUser failed', {
+            path: request.nextUrl.pathname,
+            error: error instanceof Error ? error.message : String(error),
+        })
+    }
 
     return response
 }
