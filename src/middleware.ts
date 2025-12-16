@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-    if (request.nextUrl.pathname.startsWith('/api/auth/callback')) {
+    // Skip middleware for auth callback routes to prevent interference with PKCE flow
+    if (request.nextUrl.pathname.startsWith('/api/auth/callback') ||
+        request.nextUrl.pathname.startsWith('/auth/callback')) {
         return NextResponse.next()
     }
     return await updateSession(request)
