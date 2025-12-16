@@ -53,37 +53,16 @@ export default function AuthCallbackPage() {
           if (!authCode) {
             throw new Error('Magic link is missing a token. Try requesting a new link.');
           }
-          debugAuth('callback-client', 'Exchanging auth code via server', { authCode, next });
-          const serverResponse = await fetch(`/api/auth/callback?code=${encodeURIComponent(authCode)}&next=${encodeURIComponent(next)}`, {
-            method: 'GET',
-            headers: { Accept: 'application/json' },
-            credentials: 'same-origin',
-          });
-          let serverExchangeOk = serverResponse.ok;
-          try {
-            const body = await serverResponse.clone().json();
-            if (body?.ok === false) {
-              serverExchangeOk = false;
-              console.error('Server exchange returned failure body', body);
-              throw new Error(body?.message || 'Server exchange failed');
-            }
-            console.log('Server exchange response body', body);
-          } catch (parseError) {
-            // Ignore JSON parse errors – rely on status code
-            if (process.env.NODE_ENV !== 'production') {
-              console.warn('Server exchange JSON parse skipped', parseError);
-            }
-          }
 
-          if (!serverExchangeOk) {
-            console.error('Server exchange failed, falling back to client exchange', serverResponse.status);
-            const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
-            if (exchangeError) {
-              console.error('exchangeCodeForSession error:', exchangeError);
-              throw new Error(exchangeError.message);
-            }
-            console.log('Code exchange successful, user:', data.user?.email);
+          // For PKCE flows (OAuth, magic link), exchange code directly on client
+          // The client has the code verifier stored in cookies
+          debugAuth('callback-client', 'Exchanging auth code on client', { authCode, next });
+          const { error: exchangeError, data } = await supabase.auth.exchangeCodeForSession(authCode);
+          if (exchangeError) {
+            console.error('exchangeCodeForSession error:', exchangeError);
+            throw new Error(exchangeError.message);
           }
+          console.log('Code exchange successful, user:', data.user?.email);
 
           // Wait a moment for cookies to be set
           await new Promise(resolve => setTimeout(resolve, 100));
