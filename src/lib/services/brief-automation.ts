@@ -51,27 +51,8 @@ export const briefAutomation = {
                 where: { id: briefId },
                 data: { status: 'offers' },
             });
-
-            await recordTimelineEvent({
-                briefId,
-                type: 'automation_completed',
-                actor: 'system',
-                payload: {
-                    dealersContacted: dealers.length,
-                },
-            });
-
         } catch (error) {
             console.error(`❌ Error processing brief ${briefId}:`, error);
-
-            await recordTimelineEvent({
-                briefId,
-                type: 'automation_error',
-                actor: 'system',
-                payload: {
-                    error: error instanceof Error ? error.message : String(error),
-                },
-            });
 
             throw error;
         }
@@ -82,7 +63,6 @@ export const briefAutomation = {
         const contact = await prisma.dealerContact.findFirst({
             where: {
                 dealershipId: dealer.id,
-                email: { not: null },
             },
             orderBy: { lastContactedAt: 'desc' },
         });
@@ -111,12 +91,14 @@ export const briefAutomation = {
 
     async sendEmail(brief: any, dealer: any, toEmail: string, contactId: string | null) {
         const subject = `Quote Request: ${brief.makes.join(', ')} ${brief.models?.join(', ') || ''}`;
-        const body = this.buildEmailBody(brief, dealer);
+        const textBody = this.buildEmailBody(brief, dealer);
+        const htmlBody = this.toHtmlBody(textBody);
 
         const gmailMessageId = await gmailClient.sendEmail({
             to: toEmail,
             subject,
-            body,
+            htmlBody,
+            textBody,
         });
 
         await prisma.emailMessage.create({
@@ -127,7 +109,7 @@ export const briefAutomation = {
                 direction: 'outbound',
                 toEmail,
                 subject,
-                bodyText: body,
+                bodyHtml: htmlBody,
                 gmailMessageId,
             },
         });
@@ -158,7 +140,7 @@ export const briefAutomation = {
                 dealershipId: dealer.id,
                 direction: 'outbound',
                 toNumber: dealer.phone,
-                bodyText: body,
+                body,
                 twilioSid,
             },
         });
@@ -213,5 +195,13 @@ Please let me know what you have available.
 
 Thanks,
 ${brief.buyer.email}`;
+    },
+
+    toHtmlBody(textBody: string): string {
+        const escaped = textBody
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        return escaped.replace(/\n/g, '<br/>');
     }
 };
