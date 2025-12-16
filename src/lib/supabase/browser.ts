@@ -19,8 +19,32 @@ export function getSupabaseBrowserClient() {
     throw new Error('Missing Supabase env vars for browser client');
   }
 
-  // Use default cookie-based storage for PKCE flow compatibility
-  client = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  // Configure cookie handling for PKCE flow
+  client = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        const cookies = document.cookie.split('; ');
+        for (const cookie of cookies) {
+          const [key, ...values] = cookie.split('=');
+          if (key === name) {
+            return decodeURIComponent(values.join('='));
+          }
+        }
+        return null;
+      },
+      set(name: string, value: string, options: any) {
+        let cookieStr = `${name}=${encodeURIComponent(value)}`;
+        if (options.maxAge) cookieStr += `; max-age=${options.maxAge}`;
+        if (options.path) cookieStr += `; path=${options.path}`;
+        if (options.sameSite) cookieStr += `; samesite=${options.sameSite}`;
+        if (options.secure) cookieStr += '; secure';
+        document.cookie = cookieStr;
+      },
+      remove(name: string, options: any) {
+        document.cookie = `${name}=; path=${options.path || '/'}; max-age=0`;
+      },
+    },
+  });
   if (process.env.NODE_ENV !== 'production') {
     console.log('[DEBUG][getSupabaseBrowserClient] created new client', { timestamp: new Date().toISOString() });
   }
