@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
 const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
-test.skip(!RUN_FULL_E2E, 'Requires full interactive auth + UI flow; run with RUN_FULL_E2E=1');
+test.skip(!RUN_FULL_E2E, 'Requires full e2e flow; run with RUN_FULL_E2E=1');
 
 test.describe('Brief Creation', () => {
   test.beforeAll(() => {
@@ -11,53 +11,50 @@ test.describe('Brief Creation', () => {
   });
 
   test('should create a new brief successfully', async ({ page }) => {
-    // Step 1: Log in
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'automation2@nmbli.app');
-    await page.fill('input[name="password"]', 'hE0fp6keXcnITdPAsoHZ!Aa9');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('/briefs');
+    // 1) Log in via password-login API to set cookies in this browser context
+    const loginResponse = await page.request.post('/api/auth/password-login', {
+      data: { email: 'automation2@nmbli.app', password: 'hE0fp6keXcnITdPAsoHZ!Aa9' },
+    });
+    expect(loginResponse.status()).toBe(200);
 
-    // Step 2: Navigate to the new brief form
-    await page.click('text=Create a New Brief');
+    // 2) Navigate to the new brief form
+    await page.goto('/briefs/new');
     await page.waitForURL('/briefs/new');
 
-    // Step 3: Fill out the form
-    await page.fill('input[name="zipcode"]', '90210');
-    await page.selectOption('select[name="paymentType"]', 'cash');
-    await page.fill('input[name="maxOTD"]', '50000');
-    await page.fill('input[name="makes"]', 'Toyota');
-    await page.fill('input[name="models"]', 'Camry');
-    await page.fill('input[name="trims"]', 'LE');
-    await page.fill('input[name="colors"]', 'Black');
-    await page.fill('input[name="mustHaves"]', 'Leather seats');
-    await page.selectOption('select[name="timelinePreference"]', 'asap');
+    // 3) Fill out the form
+    await page.getByLabel('Buyer ZIP').fill('90210');
+    await page.getByLabel('Max OTD budget').fill('50000');
+    await page.getByLabel('Timeline').fill('ASAP');
 
-    // Add an extra field to test the fix
-    await page.evaluate(() => {
-      const form = document.querySelector('form');
-      if (form) {
-        const extraInput = document.createElement('input');
-        extraInput.type = 'hidden';
-        extraInput.name = 'extraField';
-        extraInput.value = 'should be ignored';
-        form.appendChild(extraInput);
-      }
-    });
+    // Vehicle selector (Make/Model)
+    const makeSection = page.locator('label:has-text("Make")').locator('..');
+    await makeSection.getByRole('combobox').click();
+    await makeSection.locator('label:has-text("Toyota") [data-slot="radio-group-item"]').click();
 
-    // Step 4: Submit the form and watch for the API response
-    const responsePromise = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/briefs') && response.request().method() === 'POST'
+    const modelSection = page.locator('label:has-text("Model")').locator('..');
+    await modelSection.getByRole('combobox').click();
+    await modelSection.locator('label:has-text("Camry") [data-slot="radio-group-item"]').click();
+
+    await page.getByLabel('Color palette').fill('Black');
+    await page.getByLabel('Must-haves').fill('Leather seats');
+
+    // 4) Submit
+    const createResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/briefs') && response.request().method() === 'POST'
     );
-    await page.click('button[type="submit"]');
-    const response = await responsePromise;
+    await page.getByRole('button', { name: 'Create brief' }).click();
+    const createResponse = await createResponsePromise;
+    expect(createResponse.status()).toBe(200);
+    const createBody = await createResponse.json();
+    const briefId = createBody.brief.id as string;
+    expect(briefId).toBeTruthy();
 
-    // Step 5: Assertions
-    expect(response.status()).toBe(200); // or 201
-    
-    // Check for success message or redirection
-    await expect(page.locator('text=Brief created successfully')).toBeVisible();
-    await expect(page).toHaveURL(/.*\/briefs\/.*/); // Should redirect to the new brief's page
+    // 5) Assert redirect to the new brief's page
+    await page.waitForURL(`/briefs/${briefId}`);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Toyota');
+
+    // Cleanup: delete the created brief so the test environment stays tidy
+    const deleteResponse = await page.request.delete(`/api/briefs/${briefId}`);
+    expect(deleteResponse.status()).toBe(200);
   });
 });

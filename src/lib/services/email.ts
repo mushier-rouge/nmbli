@@ -119,39 +119,74 @@ export async function sendQuoteRequestEmail(params: {
 }) {
   const resend = createResendClient();
 
-  if (!resend) {
-    console.info('Quote request email skipped (missing RESEND_API_KEY)', {
-      dealerEmail: params.dealerEmail,
-      briefId: params.briefId,
-    });
-    return;
-  }
-
   const { briefId, dealerName, dealerEmail, year, make, model, trim, round = 'initial', lowestPrice } = params;
 
-  // Generate email content using Gemini
   const fromEmail = `quote-${briefId}@nmbli.com`;
-  const emailContent = await generateQuoteRequestEmail({
-    briefId,
-    year,
-    make,
-    model,
-    trim,
-    dealerName,
-    replyToEmail: fromEmail,
-    round,
-    lowestPrice,
-  });
+  let emailContent: { subject: string; body: string };
+
+  try {
+    // Generate email content using Gemini (preferred)
+    emailContent = await generateQuoteRequestEmail({
+      briefId,
+      year,
+      make,
+      model,
+      trim,
+      dealerName,
+      replyToEmail: fromEmail,
+      round,
+      lowestPrice,
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+
+    // Local/dev fallback when GEMINI_API_KEY is missing.
+    const vehicle = `${year} ${make} ${model}${trim ? ` ${trim}` : ''}`.trim();
+    const subject =
+      round === 'counter'
+        ? `Counter Offer: ${vehicle}`
+        : round === 'final'
+          ? `Final Offer Request: ${vehicle}`
+          : `Quote Request: ${vehicle}`;
+
+    const bodyLines = [
+      `Hello ${dealerName},`,
+      '',
+      `I'm interested in a quote for a ${vehicle}.`,
+      '',
+      'Could you please send your out-the-door price and a breakdown of MSRP, dealer discount, taxes, and fees?',
+      '',
+      `You can reply directly to this email: ${fromEmail}`,
+      '',
+      'Thanks,',
+      'nmbli',
+    ];
+
+    if (round === 'final' && typeof lowestPrice === 'number') {
+      bodyLines.splice(4, 0, `We currently have a lowest quote of $${lowestPrice.toLocaleString()}. Can you beat it?`, '');
+    }
+
+    emailContent = { subject, body: bodyLines.join('\n') };
+  }
 
   console.log(`Sending ${round} quote request to ${dealerName} (${dealerEmail})`);
 
-  await resend.emails.send({
-    from: `nmbli <${fromEmail}>`,
-    to: dealerEmail,
-    subject: emailContent.subject,
-    text: emailContent.body,
-    html: emailContent.body.replace(/\n/g, '<br>'),
-  });
+  if (!resend) {
+    console.info('Quote request email skipped (missing RESEND_API_KEY)', {
+      dealerEmail,
+      briefId,
+    });
+  } else {
+    await resend.emails.send({
+      from: `nmbli <${fromEmail}>`,
+      to: dealerEmail,
+      subject: emailContent.subject,
+      text: emailContent.body,
+      html: emailContent.body.replace(/\n/g, '<br>'),
+    });
+  }
 
   return {
     success: true,

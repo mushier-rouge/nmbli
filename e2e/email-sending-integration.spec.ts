@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { execSync } from 'child_process';
 
 /**
  * Integration test for email sending functionality
@@ -6,51 +7,48 @@ import { test, expect } from '@playwright/test';
  */
 
 const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
-test.skip(!RUN_FULL_E2E, 'Requires external email delivery + seeded test users; run with RUN_FULL_E2E=1');
+test.skip(!RUN_FULL_E2E, 'Requires full e2e flow; run with RUN_FULL_E2E=1');
 
 test.describe('Email Sending Integration Test', () => {
+  test.beforeAll(() => {
+    execSync('npm run db:seed', { stdio: 'inherit' });
+  });
 
-  test('should successfully send quote request emails to dealers', async ({ request, page }) => {
+  test('should successfully send quote request emails to dealers', async ({ page }) => {
     console.log('\n🧪 Starting Email Sending Integration Test...\n');
 
-    // Use automation test user email (from .env.local)
-    const testUserEmail = 'automation@nmbli.app';
+    // Step 1: Login as automation test user (sets cookies for subsequent API calls)
+    console.log('Step 1: Logging in via password-login...');
+    const loginResponse = await page.request.post('/api/auth/password-login', {
+      data: { email: 'automation2@nmbli.app', password: 'hE0fp6keXcnITdPAsoHZ!Aa9' },
+    });
+    expect(loginResponse.status()).toBe(200);
 
-    // Step 1: Login as automation test user
-    console.log('Step 1: Logging in...');
-    await page.goto('/login');
-    await page.fill('input[type="email"]', testUserEmail);
-    await page.click('button[type="submit"]');
-    await page.waitForTimeout(2000);
-
-    // Step 2: Navigate to create brief page
-    console.log('Step 2: Creating brief...');
-    await page.goto('/briefs/new');
-
-    // Fill out the brief form
-    await page.fill('input[name="makes"]', 'Mazda');
-    await page.fill('input[name="models"]', 'CX-90');
-    await page.fill('input[name="zipcode"]', '95126');
-    await page.fill('input[name="maxOTD"]', '50000');
-
-    // Submit the form
-    await page.click('button[type="submit"]');
-
-    // Wait for redirect to brief detail page
-    await page.waitForURL(/\/briefs\/[^/]+$/);
-
-    // Extract brief ID from URL
-    const url = page.url();
-    const briefId = url.split('/briefs/')[1];
+    // Step 2: Create a brief through the API
+    console.log('Step 2: Creating brief via API...');
+    const createResponse = await page.request.post('/api/briefs', {
+      data: {
+        zipcode: '95126',
+        paymentType: 'cash',
+        maxOTD: 50000,
+        makes: ['Mazda'],
+        models: ['CX-90'],
+        trims: [],
+        colors: [],
+        mustHaves: [],
+        timelinePreference: 'ASAP',
+      },
+    });
+    expect(createResponse.status()).toBe(200);
+    const createBody = await createResponse.json();
+    const briefId = createBody.brief.id as string;
+    expect(briefId).toBeTruthy();
     console.log(`✓ Brief created with ID: ${briefId}\n`);
 
     // Step 3: Call the send-quotes API directly
     console.log('Step 3: Calling send-quotes API...');
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const apiUrl = `${baseUrl}/api/briefs/${briefId}/send-quotes`;
-
-    const response = await request.post(apiUrl);
+    const response = await page.request.post(`/api/briefs/${briefId}/send-quotes`);
     const data = await response.json();
 
     console.log('Response status:', response.status());
@@ -83,13 +81,13 @@ test.describe('Email Sending Integration Test', () => {
     // Optional: Verify no failures
     expect(data.failed).toBeDefined();
     expect(data.failed.length).toBe(0);
+
+    // Cleanup: delete the brief
+    await page.request.delete(`/api/briefs/${briefId}`);
   });
 
   test('should handle webhook correctly', async ({ request }) => {
     console.log('\n🧪 Testing Inbound Email Webhook...\n');
-
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const webhookUrl = `${baseUrl}/api/emails/inbound`;
 
     // Test payload simulating a dealer response
     const testPayload = {
@@ -108,7 +106,7 @@ test.describe('Email Sending Integration Test', () => {
     };
 
     console.log('Sending test webhook payload...');
-    const response = await request.post(webhookUrl, {
+    const response = await request.post('/api/emails/inbound', {
       data: testPayload,
     });
 

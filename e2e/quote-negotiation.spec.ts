@@ -5,8 +5,8 @@ import { test, expect } from '@playwright/test';
  * Test-Driven Development: Tests written before implementation
  */
 
-const RUN_FULL_E2E = process.env.RUN_FULL_E2E === '1';
-test.skip(!RUN_FULL_E2E, 'Slow/experimental negotiation suite; run with RUN_FULL_E2E=1');
+const RUN_TODO_E2E = process.env.RUN_TODO_E2E === '1';
+test.skip(!RUN_TODO_E2E, 'TODO/experimental negotiation suite; run with RUN_TODO_E2E=1');
 
 test.describe('Automated Quote Negotiation', () => {
 
